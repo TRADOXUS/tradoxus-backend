@@ -13,7 +13,7 @@ This repository contains the backend services that handle the core functionality
 ## 🛠 Technical Stack
 
 - **Language:** Node.js/TypeScript
-- **Framework:** Express.js/NestJS
+- **Framework:** Express.js
 - **Database:** PostgreSQL with Prisma 
 - **Blockchain Integration:** Stellar SDK
 - **Authentication:** JWT, OAuth2
