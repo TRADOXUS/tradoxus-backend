@@ -16,8 +16,8 @@ class StellarService {
     
     // Initialize the Stellar server connection
     this.server = isProduction 
-      ? new StellarSdk.Horizon.Server('https://horizon.stellar.org') 
-      : new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+      ? new StellarSdk.Horizon.Server('https://soroban.stellar.org') 
+      : new StellarSdk.Horizon.Server('https://soroban-testnet.stellar.org');
     
     // Set the network passphrase based on environment
     this.networkPassphrase = isProduction 
