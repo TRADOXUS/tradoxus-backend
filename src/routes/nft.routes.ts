@@ -3,6 +3,6 @@ import { getNFTsController } from "../controllers/nft.controller";
 
 const router = Router();
 
-router.get('/v1/nfts', getNFTsController);
+router.get('/', getNFTsController);
   
 export default router;
