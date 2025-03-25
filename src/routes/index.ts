@@ -4,7 +4,7 @@ import courseRouter from './courseRoutes';
 import lessonRouter from './lessonRoutes';
 import moduleRouter from './moduleRoutes';
 import capsuleRouter from './capsuleRoutes';
-import nftRouter from './nft.routes';
+import nftRouter from './nftRoutes';
 
 const router = Router();
 
