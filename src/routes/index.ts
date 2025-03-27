@@ -5,6 +5,7 @@ import lessonRouter from './lessonRoutes';
 import moduleRouter from './moduleRoutes';
 import capsuleRouter from './capsuleRoutes';
 
+
 const router = Router();
 
 // Health check routes
@@ -21,5 +22,7 @@ router.use('/modules', moduleRouter);
 
 // Capsule routes
 router.use('/capsules', capsuleRouter);
+
+
 
 export default router; 

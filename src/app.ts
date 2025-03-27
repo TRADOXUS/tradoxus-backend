@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { AppDataSource } from './config/database';
 import courseRoutes from './routes/courseRoutes';
+import achievementRoutes from './routes/achievementRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/v1/courses', courseRoutes);
+app.use('/api/v1/achievements', achievementRoutes);
 
 // Error handling
 app.use(errorHandler);
