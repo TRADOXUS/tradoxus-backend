@@ -7,7 +7,7 @@ import { errorHandler } from './middleware/errorHandler';
 
 import { AppDataSource } from './config/database';
 
-import { authMiddleware } from "./middleware/authMiddleware";
+import { authenticate } from "./middleware/authMiddleware";
 import { connectToRedis } from "./config/redis";
 import { rateLimiter } from "./middleware/rateLimiter";
 
@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // JWT token middleware
-app.use('/api', authMiddleware);
+app.use('/api', authenticate);
 
 
 // API routes
