@@ -54,19 +54,19 @@ export class AchievementService extends BaseService<Achievement> {
         console.log(`Notification to ${userId}: ${title} - ${message}`);
     }
     async findAll(page: number = 1, limit: number = 10): Promise<{ items: Achievement[]; total: number }> {
-        const [items, total] = await this.repository.findAndCount({
-            skip: (page - 1) * limit,
-            take: limit,
-        });
-    
-        return { items, total };
+        try {
+            const [items, total] = await this.repository.findAndCount({
+                skip: (page - 1) * limit,
+                take: limit,
+            });
+            console.log(`Fetched ${items.length} achievements for page ${page} with limit ${limit}`);
+            return { items, total };
+        } catch (error) {
+            console.error('Error in AchievementService.findAll:', error);
+            throw error;
+        }
     }
-    
 
-    // async findAll(): Promise<Achievement[]> {
-    //     return this.repository.find();
-    // }
-    
     async findOne(id: string): Promise<Achievement | null> {
         return this.repository.findOne({ where: { id } });
     }
@@ -77,11 +77,6 @@ export class AchievementService extends BaseService<Achievement> {
             .where("ua.metadata ->> 'moduleId' = :moduleId", { moduleId })
             .getMany();
     }
-    
-    
-    // async findByModule(moduleId: string): Promise<Achievement[]> {
-    //     return this.repository.find({ where: { moduleId } });
-    // }
     
     async getUserAchievements(userId: string): Promise<UserAchievement[]> {
         return this.userAchievementRepo.find({ where: { userId }, relations: ["achievement"] });

@@ -1,26 +1,27 @@
 import { Router } from 'express';
 import { AchievementController } from '../controllers/AchievementController';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 const achievementController = new AchievementController();
 
 // Achievement Management
-router.get('/', achievementController.findAll);
-router.get('/:id', achievementController.findOne);
-router.get("/achievements/module/:moduleId", achievementController.findByModuleId.bind(achievementController));
+router.get('/', asyncHandler((req, res) => achievementController.findAll(req, res)));
+router.get('/:id', asyncHandler((req, res) => achievementController.findOne(req, res)));
+router.get("/achievements/module/:moduleId", asyncHandler((req, res) => achievementController.findByModuleId.bind(achievementController)));
 
 // User Achievements
-router.get('/users/:userId/achievements', achievementController.getUserAchievements);
-router.post('/users/:userId/achievements/:achievementId/claim', achievementController.claimAchievement);
-router.get('/users/:userId/achievements/progress', achievementController.getUserProgress);
+router.get('/users/:userId/achievements', asyncHandler((req, res) => achievementController.getUserAchievements(req,res)));
+router.post('/users/:userId/achievements/:achievementId/claim', asyncHandler((req, res) => achievementController.claimAchievement(req,res)));
+router.get('/users/:userId/achievements/progress',asyncHandler((req, res) =>  achievementController.getUserProgress(req,res)));
 
 // Achievement Progress
-router.post('/progress/update', achievementController.updateProgress.bind(achievementController));
-router.get('/leaderboard', achievementController.getLeaderboard);
-router.get('/statistics', achievementController.getStatistics);
+router.post('/progress/update', asyncHandler((req, res) => achievementController.updateProgress.bind(achievementController)));
+router.get('/leaderboard', asyncHandler((req, res) => achievementController.getLeaderboard(req,res)));
+router.get('/statistics', asyncHandler((req, res) => achievementController.getStatistics(req,res)));
 
 // Achievement Analytics
-router.get('/analytics/completion-rate', achievementController.getCompletionRate);
-router.get('/analytics/popular', achievementController.getPopularAchievements);
+router.get('/analytics/completion-rate', asyncHandler((req, res) => achievementController.getCompletionRate(req,res)));
+router.get('/analytics/popular', asyncHandler((req, res) =>  achievementController.getPopularAchievements(req,res)));
 
 export default router;

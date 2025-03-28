@@ -2,20 +2,27 @@ import { Request, Response } from 'express';
 import { AchievementService } from '../services/AchievementService';
 import { AppError } from '../middleware/errorHandler';
 
+
 export class AchievementController {
     private achievementService: AchievementService;
 
     constructor(service?: AchievementService) {
         this.achievementService = service || new AchievementService();
     }
-
+   
     async findAll(req: Request, res: Response): Promise<void> {
-        try {
-            const achievements = await this.achievementService.findAll();
-            res.json({ status: 'success', data: achievements });
-        } catch (err) {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+            
+        const achievements = await this.achievementService.findAll(page, limit);
+        console.log(achievements);
+        if (!achievements) {
             throw new AppError('Failed to fetch achievements', 500);
         }
+        res.json({
+            status: 'success',
+            data: achievements.items,
+        });
     }
 
     async findOne(req: Request, res: Response): Promise<void> {
