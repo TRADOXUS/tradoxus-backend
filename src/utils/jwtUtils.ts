@@ -1,6 +1,6 @@
-import jwt from 'jsonwebtoken';
 import { User } from '../entities/User';
 import config from '../config/config';
+
 
 interface TokenPayload {
   userId: string;
@@ -18,9 +18,8 @@ export const generateToken = (user: User): string => {
     walletAddress: user.walletAddress,
   };
 
-  return jwt.sign(payload, config.jwtSecret, {
-    expiresIn: config.jwtExpiration,
-  });
+  const mockToken = Buffer.from(JSON.stringify(payload)).toString('base64');
+  return `mock.${mockToken}.signature`;
 };
 
 /**
@@ -30,7 +29,13 @@ export const generateToken = (user: User): string => {
  */
 export const verifyToken = (token: string): TokenPayload | null => {
   try {
-    return jwt.verify(token, config.jwtSecret) as TokenPayload;
+    const parts = token.split('.');
+    if (parts.length !== 3 || parts[0] !== 'mock') {
+      return null;
+    }
+    
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    return payload as TokenPayload;
   } catch (error) {
     return null;
   }
@@ -46,5 +51,5 @@ export const extractTokenFromHeader = (authHeader: string): string | null => {
     return null;
   }
   
-  return authHeader.substring(7); // Remove 'Bearer ' prefix
+  return authHeader.substring(7);
 };
