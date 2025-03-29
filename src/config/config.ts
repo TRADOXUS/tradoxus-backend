@@ -11,6 +11,10 @@ interface Config {
   web3: {
     chainId: number;
     rpcUrl: string;
+  stellar: {
+    secretKey: string | undefined;
+    publicKey: string | undefined;
+    network: 'TESTNET' | 'PUBLIC';
   };
 }
 
@@ -22,6 +26,10 @@ const config: Config = {
   web3: {
     chainId: parseInt(process.env.CHAIN_ID || '1', 10), // Ethereum mainnet by default
     rpcUrl: process.env.RPC_URL || 'https://mainnet.infura.io/v3/your-infura-key',
+  stellar: {
+    secretKey: process.env.STELLAR_SECRET_KEY,
+    publicKey: process.env.STELLAR_PUBLIC_KEY,
+    network: (process.env.STELLAR_NETWORK === 'PUBLIC' ? 'PUBLIC' : 'TESTNET') as 'TESTNET' | 'PUBLIC',
   },
 };
 
