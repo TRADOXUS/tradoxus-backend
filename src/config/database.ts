@@ -1,7 +1,9 @@
 import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
+
 
 export const AppDataSource = new DataSource({
     type: "postgres",
@@ -15,4 +17,17 @@ export const AppDataSource = new DataSource({
     entities: ["src/entities/**/*.ts"],
     migrations: ["src/migrations/**/*.ts"],
     subscribers: ["src/subscribers/**/*.ts"],
-}); 
+});
+
+export const initializeDatabase = async (): Promise<DataSource> => {
+    try {
+        if (!AppDataSource.isInitialized) {
+            await AppDataSource.initialize();
+            console.log("Database connection established successfully");
+        }
+        return AppDataSource;
+    } catch (error) {
+        console.error("Error initializing database:", error);
+        throw error;
+    }
+};

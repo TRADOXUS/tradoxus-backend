@@ -4,11 +4,19 @@ import courseRouter from './courseRoutes';
 import lessonRouter from './lessonRoutes';
 import moduleRouter from './moduleRoutes';
 import capsuleRouter from './capsuleRoutes';
+import authRouter from './authRoutes';
+import userRouter from './userRoutes';
 
 const router = Router();
 
 // Health check routes
 router.use('/health', healthRouter);
+
+// Auth routes
+router.use('/auth', authRouter);
+
+// User routes
+router.use('/users', userRouter);
 
 // Course routes
 router.use('/courses', courseRouter);
@@ -22,4 +30,4 @@ router.use('/modules', moduleRouter);
 // Capsule routes
 router.use('/capsules', capsuleRouter);
 
-export default router; 
+export default router;
