@@ -4,8 +4,9 @@ import helmet from 'helmet';
 import config from './config/config';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
-// import { authMiddleware } from "./middleware/authMiddleware";
+import { authMiddleware } from "./middleware/authMiddleware";
 import { connectToRedis } from "./config/redis";
+import { rateLimiter } from "./middleware/rateLimiter";
 
 const app = express();
 
@@ -15,12 +16,15 @@ connectToRedis();
 app.use(helmet());
 app.use(cors());
 
+// Rate limiting middleware
+app.use(rateLimiter);
+
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // JWT token middleware
-// app.use('/api', authMiddleware);
+app.use('/api', authMiddleware);
 
 // API routes
 app.use('/api', routes);
