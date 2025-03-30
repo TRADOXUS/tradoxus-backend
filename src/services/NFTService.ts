@@ -1,8 +1,9 @@
-import { Horizon } from "@stellar/stellar-sdk";
 import { NFT as NFTResponse } from "../types/nft.types";
 import { NFT } from "../entities/NFT";
 import { BaseService } from "./BaseService";
 import { AppError } from "../middleware/errorHandler";
+import { Horizon, StellarToml } from "@stellar/stellar-sdk";
+import { isNFT } from "../utils/nft";
 
 export class NFTService extends BaseService<NFT> {
     constructor() {
@@ -25,19 +26,60 @@ export class NFTService extends BaseService<NFT> {
             }
     
             if (balance.asset_type === "credit_alphanum4" || balance.asset_type === "credit_alphanum12") {
-                let asset;
+                let nft: NFTResponse = {
+                    token_id: `${balance.sponsor}_${balance.asset_issuer}`,
+                    name: '',
+                    description: '',
+                    image_url: '',
+                    owner_address: balance.asset_issuer
+                };
+                let asset: any;
                 try {
                     asset = await server
                         .assets()
                         .forCode(balance.asset_code)
                         .forIssuer(balance.asset_issuer)
                         .call();
-                    
                 } catch (err) {
                     console.log(`Could not get assets information for balance: ${JSON.stringify(balance)}`);
                 }
+
+                const tomlLink = asset?.records[0]._links.toml.href;
+                if (tomlLink) {
+                    try {
+                        const url = new URL(tomlLink);
+                        const tomlData = await StellarToml.Resolver.resolve(url.hostname);
+                        if (!tomlData) {
+                            throw new Error("Could not resolve toml data");
+                        }
+                        const assetMetadata = tomlData.CURRENCIES?.find((c) => c.code === balance.asset_code && c.issuer === balance.asset_issuer);
+                        if (!assetMetadata) {
+                            continue;
+                        }
+                        if (assetMetadata?.is_asset_anchored && assetMetadata?.anchor_asset_type !== "nft") {
+                            continue;
+                        }
+                        if (!isNFT(assetMetadata)) {
+                            continue;
+                        }
+                        nft = {
+                            ...nft,
+                            name: assetMetadata?.name ?? '',
+                            description: assetMetadata?.desc ?? '',
+                            image_url: assetMetadata?.image ?? ''
+                        }
+                    } catch (error) {
+                        console.log(`Could not get toml metadata for the given asset: ${JSON.stringify(asset)}`);
+                    }
+                }
+                nfts.push(nft);
             }
         }
-        return { nfts, total: nfts.length };
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        return {
+            nfts: startIndex >= nfts.length ? [] : nfts.slice(startIndex, endIndex),
+            total: nfts.length
+        };
     }
 }
