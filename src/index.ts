@@ -4,9 +4,12 @@ import helmet from 'helmet';
 import config from './config/config';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
-import { authMiddleware } from "./middleware/authMiddleware";
+// import { authMiddleware } from "./middleware/authMiddleware";
+import { connectToRedis } from "./config/redis";
 
 const app = express();
+
+connectToRedis();
 
 // Security middleware
 app.use(helmet());
@@ -17,7 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // JWT token middleware
-app.use('/api', authMiddleware);
+// app.use('/api', authMiddleware);
 
 // API routes
 app.use('/api', routes);
