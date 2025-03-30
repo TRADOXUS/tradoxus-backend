@@ -10,6 +10,7 @@ describe('Lesson Entity', () => {
     beforeEach(() => {
         mockModule = new Module();
         lesson = new Lesson();
+        lesson.capsules = [];
         lesson.module = mockModule;
     });
 

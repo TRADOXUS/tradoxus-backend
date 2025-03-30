@@ -8,7 +8,9 @@ const achievementController = new AchievementController();
 // Achievement Management
 router.get('/', asyncHandler((req, res) => achievementController.findAll(req, res)));
 router.get('/:id', asyncHandler((req, res) => achievementController.findOne(req, res)));
-router.get("/achievements/module/:moduleId", asyncHandler((req, res) => achievementController.findByModuleId.bind(achievementController)));
+router.get("/module/:moduleId", asyncHandler(achievementController.findByModuleId.bind(achievementController)));
+
+//router.post("/module/:moduleId", asyncHandler((req, res) => achievementController.findByModuleId.bind(achievementController)));
 
 // User Achievements
 router.get('/users/:userId/achievements', asyncHandler((req, res) => achievementController.getUserAchievements(req,res)));
@@ -16,7 +18,7 @@ router.post('/users/:userId/achievements/:achievementId/claim', asyncHandler((re
 router.get('/users/:userId/achievements/progress',asyncHandler((req, res) =>  achievementController.getUserProgress(req,res)));
 
 // Achievement Progress
-router.post('/progress/update', asyncHandler((req, res) => achievementController.updateProgress.bind(achievementController)));
+router.post('/progress/update', asyncHandler(achievementController.updateProgress.bind(achievementController)));
 router.get('/leaderboard', asyncHandler((req, res) => achievementController.getLeaderboard(req,res)));
 router.get('/statistics', asyncHandler((req, res) => achievementController.getStatistics(req,res)));
 

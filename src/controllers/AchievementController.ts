@@ -15,7 +15,6 @@ export class AchievementController {
         const limit = parseInt(req.query.limit as string) || 10;
             
         const achievements = await this.achievementService.findAll(page, limit);
-        console.log(achievements);
         if (!achievements) {
             throw new AppError('Failed to fetch achievements', 500);
         }
@@ -36,7 +35,6 @@ export class AchievementController {
             throw new AppError('Failed to fetch achievement', 500);
         }
     }
-
     async findByModuleId(req: Request, res: Response): Promise<Response> {
         try {
             const { moduleId } = req.params;

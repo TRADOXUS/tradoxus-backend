@@ -31,7 +31,7 @@ export class Module {
     @OneToMany(() => Lesson, (lesson: Lesson) => lesson.module, {
         cascade: true
     })
-    lessons: Lesson[] = [];
+    lessons!: Lesson[];
 
     @CreateDateColumn()
     createdAt!: Date;

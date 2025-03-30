@@ -12,7 +12,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME || "course_management",
     synchronize: process.env.NODE_ENV !== "production", // Only true in development
     logging: process.env.NODE_ENV !== "production",
+    migrations: [__dirname + "/../migrations/**/*.ts"],
+    subscribers: [__dirname + "/../subscribers/**/*.ts"],
     entities: ["src/entities/**/*.ts"],
-    migrations: ["src/migrations/**/*.ts"],
-    subscribers: ["src/subscribers/**/*.ts"],
 }); 
