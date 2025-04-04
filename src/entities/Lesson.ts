@@ -2,6 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { Module } from "./Module";
 import { Capsule } from "./Capsule";
 import { IsNotEmpty, IsString, Length, IsNumber, Min, IsArray, IsOptional } from "class-validator";
+import { Course } from './Course';
+import { LessonProgress } from './LessonProgress';
 
 @Entity('lessons')
 export class Lesson {
@@ -37,6 +39,12 @@ export class Lesson {
         cascade: true
     })
     capsules!: Capsule[];
+
+    @ManyToOne(() => Course, course => course.lessons)
+    course: Course;
+
+    @OneToMany(() => LessonProgress, progress => progress.lesson)
+    progress: LessonProgress[];
 
     @CreateDateColumn()
     createdAt!: Date;
