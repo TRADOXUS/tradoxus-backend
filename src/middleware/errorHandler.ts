@@ -1,57 +1,49 @@
 import { Request, Response, NextFunction } from 'express';
-import { ValidationError } from 'class-validator';
 
 export class AppError extends Error {
-    statusCode: number;
-    status: string;
-    isOperational: boolean;
-
-    constructor(message: string, statusCode: number) {
+    constructor(
+        public statusCode: number,
+        public message: string
+    ) {
         super(message);
-        this.statusCode = statusCode;
-        this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
-        this.isOperational = true;
-
-        Error.captureStackTrace(this, this.constructor);
+        this.name = 'AppError';
     }
 }
 
 export const errorHandler = (
-    err: Error | AppError | ValidationError[],
+    err: Error,
     req: Request,
     res: Response,
     next: NextFunction
-): void => {
+) => {
+    console.error(err);
+
     if (err instanceof AppError) {
-        res.status(err.statusCode).json({
-            status: err.status,
-            error: {
-                message: err.message
-            }
+        return res.status(err.statusCode).json({
+            status: 'error',
+            message: err.message
         });
-        return;
     }
 
-    if (Array.isArray(err) && err[0] instanceof ValidationError) {
-        res.status(400).json({
-            status: 'fail',
-            error: {
-                message: 'Validation Error',
-                errors: err.map(error => ({
-                    property: error.property,
-                    constraints: error.constraints
-                }))
-            }
+    // TypeORM validation error
+    if (err.name === 'QueryFailedError') {
+        return res.status(400).json({
+            status: 'error',
+            message: 'Database error'
         });
-        return;
     }
 
-    console.error('Error:', err);
+    // JWT error
+    if (err.name === 'JsonWebTokenError') {
+        return res.status(401).json({
+            status: 'error',
+            message: 'Invalid token'
+        });
+    }
 
-    res.status(500).json({
+    // Default error
+    return res.status(500).json({
         status: 'error',
-        error: {
-            message: 'Internal Server Error'
-        }
+        message: 'Internal server error'
     });
 }; 
