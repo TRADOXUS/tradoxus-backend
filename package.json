@@ -4,8 +4,8 @@
   "description": "Backend services powering the Tradoxus Trading Learning Platform - an interactive educational platform designed to empower learners with comprehensive knowledge and practical skills in crypto trading.",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts",
+    "start": "ts-node src/index.ts",
+    "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -17,6 +17,8 @@
   "license": "ISC",
   "dependencies": {
     "@stellar/stellar-sdk": "^13.1.0",
+    "@types/bcrypt": "^5.0.2",
+    "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cors": "^2.8.5",
