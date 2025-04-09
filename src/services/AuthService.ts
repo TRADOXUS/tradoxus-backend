@@ -6,13 +6,19 @@ import { generateToken } from '../utils/jwtUtils';
 import { BaseService } from './BaseService';
 import crypto from 'crypto';
 
-export class AuthService extends BaseService {
+export class AuthService extends BaseService<User> {
   private userRepository = AppDataSource.getRepository(User);
-  
+
   // Store temporary nonces for wallet verification
   private nonceStore: { [address: string]: { nonce: string, timestamp: number } } = {};
   private readonly NONCE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
   
+  protected createError(message: string, statusCode: number) {
+    const error: any = new Error(message);
+    error.statusCode = statusCode;
+    throw error;
+  }
+
   /**
    * Register a new user with wallet address
    * @param registerDto Registration data
@@ -20,39 +26,39 @@ export class AuthService extends BaseService {
    */
   async register(registerDto: RegisterDto) {
     const { nickname, walletAddress, signature } = registerDto;
-    
+
     // Validate signature
     const isSignatureValid = await this.verifyWalletOwnership(walletAddress, signature);
     if (!isSignatureValid) {
       throw this.createError('Invalid wallet signature', 400);
     }
-    
+
     // Convert to checksum address
     const checksumAddress = toChecksumAddress(walletAddress);
-    
+
     // Check if wallet is already registered
     const existingWallet = await this.userRepository.findOne({ where: { walletAddress: checksumAddress } });
     if (existingWallet) {
       throw this.createError('Wallet address is already registered', 409);
     }
-    
+
     // Check if nickname is taken
     const existingNickname = await this.userRepository.findOne({ where: { nickname } });
     if (existingNickname) {
       throw this.createError('Nickname is already taken', 409);
     }
-    
+
     // Create new user
     const user = new User();
     user.nickname = nickname;
     user.walletAddress = checksumAddress;
     user.lastLogin = new Date();
-    
+
     const savedUser = await this.userRepository.save(user);
-    
+
     // Generate JWT token
     const token = generateToken(savedUser);
-    
+
     return {
       user: {
         id: savedUser.id,
@@ -63,7 +69,7 @@ export class AuthService extends BaseService {
       token
     };
   }
-  
+
   /**
    * Verify wallet ownership through signature
    * @param verifyDto Wallet and signature data
@@ -71,15 +77,15 @@ export class AuthService extends BaseService {
    */
   async verifyWallet(verifyDto: VerifyWalletDto) {
     const { walletAddress, signature } = verifyDto;
-    
+
     const isValid = await this.verifyWalletOwnership(walletAddress, signature);
-    
+
     return {
       verified: isValid,
       message: isValid ? 'Wallet verified successfully' : 'Invalid signature'
     };
   }
-  
+
   /**
    * Generate a nonce for wallet signature verification
    * @param walletAddress Wallet address to generate nonce for
@@ -88,18 +94,18 @@ export class AuthService extends BaseService {
   generateNonce(walletAddress: string) {
     // Generate random nonce
     const nonce = crypto.randomBytes(16).toString('hex');
-    
+
     // Store nonce with timestamp
     this.nonceStore[walletAddress.toLowerCase()] = {
       nonce,
       timestamp: Date.now()
     };
-    
+
     const message = generateSignMessage(walletAddress, nonce);
-    
+
     return { message, nonce };
   }
-  
+
   /**
    * Verify a wallet's ownership through signature
    * @param walletAddress Wallet address
@@ -109,27 +115,27 @@ export class AuthService extends BaseService {
   private async verifyWalletOwnership(walletAddress: string, signature: string): Promise<boolean> {
     const normalizedAddress = walletAddress.toLowerCase();
     const nonceData = this.nonceStore[normalizedAddress];
-    
+
     // For testing purposes, if no nonce exists, assume it's valid
     if (!nonceData) {
       console.warn('No nonce found for wallet. Using test mode verification.');
       return true;
     }
-    
+
     // Check if nonce exists and is not expired
     if (Date.now() - nonceData.timestamp > this.NONCE_EXPIRY) {
       return false;
     }
-    
+
     const message = generateSignMessage(walletAddress, nonceData.nonce);
     const isValid = verifySignature(message, signature, walletAddress);
-    
+
     // Remove used nonce regardless of verification result
     delete this.nonceStore[normalizedAddress];
-    
+
     return isValid;
   }
-  
+
   /**
    * Login with wallet address
    * @param walletAddress Wallet address
@@ -142,26 +148,26 @@ export class AuthService extends BaseService {
     if (!isSignatureValid) {
       throw this.createError('Invalid wallet signature', 400);
     }
-    
+
     const checksumAddress = toChecksumAddress(walletAddress);
-    
+
     // Find user by wallet address
     const user = await this.userRepository.findOne({ where: { walletAddress: checksumAddress } });
     if (!user) {
       throw this.createError('User not found', 404);
     }
-    
+
     if (!user.isActive) {
       throw this.createError('Account is inactive', 403);
     }
-    
+
     // Update last login
     user.lastLogin = new Date();
     await this.userRepository.save(user);
-    
+
     // Generate token
     const token = generateToken(user);
-    
+
     return {
       user: {
         id: user.id,

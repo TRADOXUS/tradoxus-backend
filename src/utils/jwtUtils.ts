@@ -1,5 +1,5 @@
 import { User } from '../entities/User';
-import config from '../config/config';
+// import config from '../config/config';
 
 
 interface TokenPayload {

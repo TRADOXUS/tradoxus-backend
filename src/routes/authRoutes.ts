@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import rateLimit from 'express-rate-limit';
+import { User } from 'src/entities/User';
 
 const router = Router();
-const authController = new AuthController();
+const authController = new AuthController(User);
 
 // Rate limiting for registration and login attempts
 const authLimiter = rateLimit({

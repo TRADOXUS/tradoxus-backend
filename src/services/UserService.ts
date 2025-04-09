@@ -3,8 +3,14 @@ import { User } from '../entities/User';
 import { UpdateUserDto, UserProfileDto } from '../dto/UserDto';
 import { BaseService } from './BaseService';
 
-export class UserService extends BaseService {
+export class UserService extends BaseService <User> {
   private userRepository = AppDataSource.getRepository(User);
+  
+  protected createError(message: string, statusCode: number) {
+    const error: any = new Error(message);
+    error.statusCode = statusCode;
+    throw error;
+  }
   
   /**
    * Get user profile by ID
