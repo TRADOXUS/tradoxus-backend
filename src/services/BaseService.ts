@@ -35,4 +35,9 @@ export abstract class BaseService<T extends ObjectLiteral> {
         const result = await this.repository.softDelete(id);
         return result.affected ? true : false;
     }
+     protected createError(message: string, statusCode: number) {
+    const error: any = new Error(message);
+    error.statusCode = statusCode;
+    throw error;
+  }
 } 
