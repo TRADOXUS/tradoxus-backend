@@ -3,7 +3,7 @@ import { UserService } from '../services/UserService';
 import { UpdateUserDto } from '../dto/UserDto';
 import { BaseController } from './BaseController';
 import { validate, ValidationError } from 'class-validator';
-import { User } from 'src/entities/User';
+import { User } from '../entities/User';
 
 export class UserController extends BaseController<User> {
   private userService = new UserService(User);

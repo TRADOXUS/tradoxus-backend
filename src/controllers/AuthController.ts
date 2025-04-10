@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { AuthService } from '../services/AuthService';
 import { RegisterDto, VerifyWalletDto } from '../dto/AuthDto';
 import { BaseController } from './BaseController';
-import { User } from 'src/entities/User';
+import { User } from '../entities/User';
 import { validate, ValidationError } from 'class-validator';
 
 export class AuthController extends BaseController<User> {

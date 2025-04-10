@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/UserController';
 import { authenticate } from '../middleware/authMiddleware';
-import { User } from 'src/entities/User';
+import { User } from '../entities/User';
 
 const router = Router();
 const userController = new UserController(User);

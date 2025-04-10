@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import rateLimit from 'express-rate-limit';
-import { User } from 'src/entities/User';
+import { User } from '../entities/User';
 
 const router = Router();
 const authController = new AuthController(User);
