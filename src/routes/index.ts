@@ -5,27 +5,27 @@ import lessonRouter from './lessonRoutes';
 import moduleRouter from './moduleRoutes';
 import capsuleRouter from './capsuleRoutes';
 import achievementRouter from './achievementRoutes';
+import nftRouter from './nftRoutes';
 import { createAuthRoutes } from './auth.routes';
 import { createLessonProgressRoutes } from './lessonProgress.routes';
 import { AuthController } from '../controllers/AuthController';
 import { LessonProgressController } from '../controllers/LessonProgressController';
 import { AuthService } from '../services/AuthService';
 import { LessonProgressService } from '../services/LessonProgressService';
-import { getRepository } from 'typeorm';
+import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { LessonProgress } from '../entities/LessonProgress';
 import { Lesson } from '../entities/Lesson';
-
-import nftRouter from './nftRoutes';
+import userRouter from './userRoutes';
 
 export function setupRoutes(): Router {
   const router = Router();
 
   // Inicializar servicios
-  const authService = new AuthService(getRepository(User));
+  const authService = new AuthService(AppDataSource.getRepository(User));
   const lessonProgressService = new LessonProgressService(
-    getRepository(LessonProgress),
-    getRepository(Lesson)
+    AppDataSource.getRepository(LessonProgress),
+    AppDataSource.getRepository(Lesson)
   );
 
   // Inicializar controladores
@@ -35,6 +35,7 @@ export function setupRoutes(): Router {
   // Configurar rutas
   router.use('/auth', createAuthRoutes(authController));
   router.use('/progress', createLessonProgressRoutes(lessonProgressController));
+  router.use('/users', userRouter);
 
   // Health check routes
   router.use('/health', healthRouter);
@@ -60,4 +61,4 @@ export function setupRoutes(): Router {
   return router;
 }
 
-export default setupRoutes(); 
+export default setupRoutes();

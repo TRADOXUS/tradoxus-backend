@@ -16,15 +16,16 @@ class NFTCertificateService {
   async createCertificate(certificateData: any, recipientPublicKey: string) {
     try {
       // Ensure we have a secret key for the issuer
-      if (!config.stellar.secretKey) {
+      if (!config.web3.stellar.secretKey) {
         throw new Error('Issuer secret key is not configured');
       }
 
       // Create a keypair from the issuer's secret key
-      const issuerKeypair = StellarService.createKeypairFromSecret(config.stellar.secretKey);
+      const issuerKeypair = StellarService.createKeypairFromSecret(config.web3.stellar.secretKey);
       
       // Create a JSON string of the certificate data
-      const certificateJson = JSON.stringify(certificateData);
+      
+      // const certificateJson = JSON.stringify(certificateData);
       
       // Use a memo to store a reference or hash of the certificate data
       // Note: For larger data, you would typically store the data off-chain
