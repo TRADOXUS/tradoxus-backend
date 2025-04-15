@@ -1,12 +1,15 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/AuthService';
+import { AppError } from '../middleware/errorHandler';
 import { RegisterDto, VerifyWalletDto } from '../dto/AuthDto';
 import { BaseController } from './BaseController';
 import { User } from '../entities/User';
 import { validate, ValidationError } from 'class-validator';
 
 export class AuthController extends BaseController<User> {
-  private authService = new AuthService(User);
+  constructor(private authService: AuthService) {
+    super(User);
+  }
 
   handleValidationErrors(errors: ValidationError[], res: Response) {
     const formattedErrors = errors.map((error) => {
@@ -31,10 +34,38 @@ export class AuthController extends BaseController<User> {
   }
 
   /**
-   * Register a new user with wallet connection
+   * Register a new user with email and password
    * @route POST /api/auth/register
    */
-  register = async (req: Request, res: Response): Promise<void> => {
+  async register(req: Request, res: Response) {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      const user = await this.authService.register(email, password, firstName, lastName);
+      
+      res.status(201).json({
+        status: 'success',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName
+          }
+        }
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new AppError(400, error.message);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Register a new user with wallet connection
+   * @route POST /api/auth/register-wallet
+   */
+  registerWithWallet = async (req: Request, res: Response): Promise<void> => {
     try {
       const registerDto = new RegisterDto();
       Object.assign(registerDto, req.body);
@@ -46,12 +77,41 @@ export class AuthController extends BaseController<User> {
         return;
       }
 
-      const result = await this.authService.register(registerDto);
+      const result = await this.authService.registerWithWallet(registerDto);
       res.status(201).json(result);
     } catch (error) {
       this.handleError(error, res);
     }
   };
+
+  /**
+   * Login with email and password
+   * @route POST /api/auth/login
+   */
+  async login(req: Request, res: Response) {
+    try {
+      const { email, password } = req.body;
+      const { user, token } = await this.authService.login(email, password);
+      
+      res.json({
+        status: 'success',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName
+          },
+          token
+        }
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new AppError(401, error.message);
+      }
+      throw error;
+    }
+  }
 
   /**
    * Generate nonce for wallet signature verification
@@ -98,9 +158,9 @@ export class AuthController extends BaseController<User> {
 
   /**
    * Login with wallet
-   * @route POST /api/auth/login
+   * @route POST /api/auth/login-wallet
    */
-  login = async (req: Request, res: Response): Promise<void> => {
+  loginWithWallet = async (req: Request, res: Response): Promise<void> => {
     try {
       const { walletAddress, signature } = req.body;
 

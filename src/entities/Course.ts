@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, DeleteDateColumn } from "typeorm";
 import { Module } from "./Module";
 import { IsNotEmpty, IsString, Length } from "class-validator";
+import { Lesson } from './Lesson';
 
 @Entity('courses')
 export class Course {
@@ -26,6 +27,9 @@ export class Course {
         cascade: true
     })
     modules!: Module[];
+
+    @OneToMany(() => Lesson, lesson => lesson.course)
+    lessons: Lesson[];
 
     @CreateDateColumn()
     createdAt!: Date;

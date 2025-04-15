@@ -6,37 +6,59 @@ import moduleRouter from './moduleRoutes';
 import capsuleRouter from './capsuleRoutes';
 import achievementRouter from './achievementRoutes';
 import nftRouter from './nftRoutes';
-import authRouter from './authRoutes';
+import { createAuthRoutes } from './auth.routes';
+import { createLessonProgressRoutes } from './lessonProgress.routes';
+import { AuthController } from '../controllers/AuthController';
+import { LessonProgressController } from '../controllers/LessonProgressController';
+import { AuthService } from '../services/AuthService';
+import { LessonProgressService } from '../services/LessonProgressService';
+import { AppDataSource } from '../config/database';
+import { User } from '../entities/User';
+import { LessonProgress } from '../entities/LessonProgress';
+import { Lesson } from '../entities/Lesson';
 import userRouter from './userRoutes';
 
-const router = Router();
+export function setupRoutes(): Router {
+  const router = Router();
 
-// Health check routes
-router.use('/health', healthRouter);
+  // Inicializar servicios
+  const authService = new AuthService(AppDataSource.getRepository(User));
+  const lessonProgressService = new LessonProgressService(
+    AppDataSource.getRepository(LessonProgress),
+    AppDataSource.getRepository(Lesson)
+  );
 
-// Auth routes
-router.use('/auth', authRouter);
+  // Inicializar controladores
+  const authController = new AuthController(authService);
+  const lessonProgressController = new LessonProgressController(lessonProgressService);
 
-// User routes
-router.use('/users', userRouter);
+  // Configurar rutas
+  router.use('/auth', createAuthRoutes(authController));
+  router.use('/progress', createLessonProgressRoutes(lessonProgressController));
+  router.use('/users', userRouter);
 
-// Course routes
-router.use('/courses', courseRouter);
+  // Health check routes
+  router.use('/health', healthRouter);
 
-// Lesson routes
-router.use('/lessons', lessonRouter);
+  // Course routes
+  router.use('/courses', courseRouter);
 
-// Module routes
-router.use('/modules', moduleRouter);
+  // Lesson routes
+  router.use('/lessons', lessonRouter);
 
-// Capsule routes
-router.use('/capsules', capsuleRouter);
+  // Module routes
+  router.use('/modules', moduleRouter);
 
-// Achievements routes
-router.use('/achievements', achievementRouter);
+  // Capsule routes
+  router.use('/capsules', capsuleRouter);
 
-// NFT routes
-router.use('/v1/nfts', nftRouter);
+  // Achievements routes
+  router.use('/achievements', achievementRouter);
 
+  // NFT routes
+  router.use('/v1/nfts', nftRouter);
 
-export default router;
+  return router;
+}
+
+export default setupRoutes();
