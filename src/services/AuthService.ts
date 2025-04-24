@@ -1,5 +1,7 @@
-import { AppDataSource } from '../config/database';
+import { Repository } from 'typeorm';
 import { User } from '../entities/User';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { RegisterDto, VerifyWalletDto } from '../dto/AuthDto';
 import { generateSignMessage, verifySignature, toChecksumAddress } from '../utils/walletUtils';
 import { generateToken } from '../utils/jwtUtils';
@@ -7,7 +9,11 @@ import { BaseService } from './BaseService';
 import crypto from 'crypto';
 
 export class AuthService extends BaseService<User> {
-  private userRepository = AppDataSource.getRepository(User);
+  constructor(
+    private userRepository: Repository<User>
+  ) {
+    super(User);
+  }
 
   // Store temporary nonces for wallet verification
   private nonceStore: { [address: string]: { nonce: string, timestamp: number } } = {};
@@ -20,11 +26,31 @@ export class AuthService extends BaseService<User> {
   }
 
   /**
+   * Register a new user with email and password
+   */
+  async register(email: string, password: string, firstName?: string, lastName?: string): Promise<User> {
+    const existingUser = await this.userRepository.findOne({ where: { email } });
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = this.userRepository.create({
+      email,
+      passwordHash,
+      firstName,
+      lastName
+    });
+
+    return this.userRepository.save(user);
+  }
+
+  /**
    * Register a new user with wallet address
    * @param registerDto Registration data
    * @returns User and token if successful
    */
-  async register(registerDto: RegisterDto) {
+  async registerWithWallet(registerDto: RegisterDto) {
     const { nickname, walletAddress, signature } = registerDto;
 
     // Validate signature
@@ -52,7 +78,7 @@ export class AuthService extends BaseService<User> {
     const user = new User();
     user.nickname = nickname;
     user.walletAddress = checksumAddress;
-    user.lastLogin = new Date();
+    user.lastLoginAt = new Date();
 
     const savedUser = await this.userRepository.save(user);
 
@@ -68,6 +94,32 @@ export class AuthService extends BaseService<User> {
       },
       token
     };
+  }
+
+  /**
+   * Login with email and password
+   */
+  async login(email: string, password: string): Promise<{ user: User; token: string }> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new Error('Invalid credentials');
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!isValidPassword) {
+      throw new Error('Invalid credentials');
+    }
+
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET!,
+      { expiresIn: '24h' }
+    );
+
+    user.lastLoginAt = new Date();
+    await this.userRepository.save(user);
+
+    return { user, token };
   }
 
   /**
@@ -162,7 +214,7 @@ export class AuthService extends BaseService<User> {
     }
 
     // Update last login
-    user.lastLogin = new Date();
+    user.lastLoginAt = new Date();
     await this.userRepository.save(user);
 
     // Generate token
@@ -177,5 +229,23 @@ export class AuthService extends BaseService<User> {
       },
       token
     };
+  }
+
+  /**
+   * Validate JWT token
+   */
+  async validateToken(token: string): Promise<User> {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+      const user = await this.userRepository.findOne({ where: { id: decoded.userId } });
+      
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      return user;
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
   }
 }
