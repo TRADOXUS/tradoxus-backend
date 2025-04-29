@@ -1,5 +1,4 @@
 import { Achievement, UserAchievement, AchievementType, AchievementCategory } from "../../entities/Achievement";
-import { DataSource } from "typeorm";
 
 describe("Achievement Entity", () => {
   it("should create an achievement with valid properties", async () => {
