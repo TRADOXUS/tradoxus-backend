@@ -9,6 +9,7 @@ import { ModuleService } from '../../services/ModuleService';
 import { AppDataSource } from '../../config/database';
 import { Course } from '../../entities/Course';
 import { Module } from '../../entities/Module';
+import { Request, Response, NextFunction } from 'express';
 
 // Mock the database connection
 jest.mock('../../config/database', () => ({
@@ -35,6 +36,7 @@ jest.mock('../../services/ModuleService', () => {
           description: 'Test Description',
           isPublished: false,
           modules: [],
+          lessons: [],
           createdAt: mockDate,
           updatedAt: mockDate
         },
@@ -54,6 +56,7 @@ jest.mock('../../services/ModuleService', () => {
             description: 'Test Description',
             isPublished: false,
             modules: [],
+            lessons: [],
             createdAt: mockDate,
             updatedAt: mockDate
           },
@@ -76,6 +79,7 @@ jest.mock('../../services/ModuleService', () => {
             description: 'Test Description',
             isPublished: false,
             modules: [],
+            lessons: [],
             createdAt: mockDate,
             updatedAt: mockDate
           },
@@ -97,6 +101,7 @@ jest.mock('../../services/ModuleService', () => {
             description: 'Test Description',
             isPublished: false,
             modules: [],
+            lessons: [],
             createdAt: mockDate,
             updatedAt: mockDate
           },
@@ -127,7 +132,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', routes);
 
 // Error handler should be last
-app.use(errorHandler);
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  errorHandler(err, req, res, next);
+});
 
 // Clear all mocks before each test
 beforeEach(() => {
@@ -147,6 +154,7 @@ describe('Module Controller Tests', () => {
         description: 'Test Description',
         isPublished: false,
         modules: [],
+        lessons: [],
         createdAt: mockDate,
         updatedAt: mockDate
     };
@@ -162,6 +170,23 @@ describe('Module Controller Tests', () => {
         updatedAt: mockDate
     };
 
+    const convertToExpectedFormat = (obj: any): any => {
+        if (obj instanceof Date) {
+            return obj.toISOString();
+        }
+        if (Array.isArray(obj)) {
+            return obj.map(convertToExpectedFormat);
+        }
+        if (obj && typeof obj === 'object') {
+            const result: any = {};
+            for (const key in obj) {
+                result[key] = convertToExpectedFormat(obj[key]);
+            }
+            return result;
+        }
+        return obj;
+    };
+
     let moduleService: jest.Mocked<ModuleService>;
 
     beforeEach(() => {
@@ -175,21 +200,12 @@ describe('Module Controller Tests', () => {
 
             const response = await request(app)
                 .post('/api/modules')
-                .send(mockModule)
+                .send(convertToExpectedFormat(mockModule))
                 .expect(201);
 
             expect(response.body).toEqual({
                 status: 'success',
-                data: {
-                    ...mockModule,
-                    createdAt: mockDate.toISOString(),
-                    updatedAt: mockDate.toISOString(),
-                    course: {
-                        ...mockCourse,
-                        createdAt: mockDate.toISOString(),
-                        updatedAt: mockDate.toISOString()
-                    }
-                }
+                data: convertToExpectedFormat(mockModule)
             });
         });
     });
@@ -209,16 +225,7 @@ describe('Module Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'success',
-                data: [{
-                    ...mockModule,
-                    createdAt: mockDate.toISOString(),
-                    updatedAt: mockDate.toISOString(),
-                    course: {
-                        ...mockCourse,
-                        createdAt: mockDate.toISOString(),
-                        updatedAt: mockDate.toISOString()
-                    }
-                }],
+                data: convertToExpectedFormat(mockModules),
                 pagination: {
                     total: mockTotal,
                     page: 1,
@@ -239,16 +246,7 @@ describe('Module Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'success',
-                data: {
-                    ...mockModule,
-                    createdAt: mockDate.toISOString(),
-                    updatedAt: mockDate.toISOString(),
-                    course: {
-                        ...mockCourse,
-                        createdAt: mockDate.toISOString(),
-                        updatedAt: mockDate.toISOString()
-                    }
-                }
+                data: convertToExpectedFormat(mockModule)
             });
         });
 
@@ -273,21 +271,12 @@ describe('Module Controller Tests', () => {
 
             const response = await request(app)
                 .put('/api/modules/1')
-                .send(updatedModule)
+                .send(convertToExpectedFormat(updatedModule))
                 .expect(200);
 
             expect(response.body).toEqual({
                 status: 'success',
-                data: {
-                    ...updatedModule,
-                    createdAt: mockDate.toISOString(),
-                    updatedAt: mockDate.toISOString(),
-                    course: {
-                        ...mockCourse,
-                        createdAt: mockDate.toISOString(),
-                        updatedAt: mockDate.toISOString()
-                    }
-                }
+                data: convertToExpectedFormat(updatedModule)
             });
         });
 
