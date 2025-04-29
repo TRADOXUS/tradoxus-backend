@@ -4,6 +4,7 @@ import { Capsule, CapsuleType } from '../entities/Capsule';
 import { Lesson } from '../entities/Lesson';
 import { AppDataSource } from '../config/database';
 import { validate } from 'class-validator';
+import { FindOptionsWhere } from 'typeorm';
 
 export class CapsuleController extends BaseController<Capsule> {
     private lessonRepository = AppDataSource.getRepository(Lesson);
@@ -52,7 +53,7 @@ export class CapsuleController extends BaseController<Capsule> {
             const limit = parseInt(req.query.limit as string) || 10;
             const skip = (page - 1) * limit;
 
-            const whereClause: any = { lesson: { id: lessonId } };
+            const whereClause: FindOptionsWhere<Capsule> = { lesson: { id: lessonId } };
             if (type) {
                 whereClause.type = type;
             }
