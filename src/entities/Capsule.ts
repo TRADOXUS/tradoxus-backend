@@ -9,6 +9,22 @@ export enum CapsuleType {
     ASSIGNMENT = 'assignment'
 }
 
+export interface CapsuleContent {
+    text?: string;
+    videoUrl?: string;
+    questions?: Array<{
+        id: string;
+        question: string;
+        options: string[];
+        correctAnswer: number;
+    }>;
+    assignment?: {
+        description: string;
+        deadline?: Date;
+        maxPoints?: number;
+    };
+}
+
 @Entity('capsules')
 export class Capsule {
     @PrimaryGeneratedColumn('uuid')
@@ -39,7 +55,7 @@ export class Capsule {
     @Column({ type: 'jsonb', nullable: true })
     @IsOptional()
     @IsObject()
-    content?: Record<string, any>;
+    content?: CapsuleContent;
 
     @ManyToOne(() => Lesson, (lesson: Lesson) => lesson.capsules, {
         onDelete: 'CASCADE'
