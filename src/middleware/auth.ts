@@ -3,12 +3,10 @@ import jwt from 'jsonwebtoken';
 import { User } from '../entities/User';
 
 // Extend Express Request interface to include user
-declare global {
-  namespace Express {
+declare module 'express' {
     interface Request {
-      user?: User;
+        user?: User;
     }
-  }
 }
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
