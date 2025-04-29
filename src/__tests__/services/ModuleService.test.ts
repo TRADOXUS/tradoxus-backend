@@ -1,6 +1,4 @@
 import { ModuleService } from '../../services/ModuleService';
-import { Module } from '../../entities/Module';
-import { Course } from '../../entities/Course';
 import { AppDataSource } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 
