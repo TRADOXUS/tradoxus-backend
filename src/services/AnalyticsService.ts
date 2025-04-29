@@ -1,6 +1,7 @@
 import { Repository, In } from 'typeorm';
 import { LessonProgress, ProgressStatus } from '../entities/LessonProgress';
 import { Course } from '../entities/Course';
+import { AnalyticsMetadata } from '../dto/Analytics.dto';
 
 interface BulkStatusResult {
   [userId: string]: {
@@ -116,7 +117,7 @@ export class AnalyticsService {
     status?: ProgressStatus;
     timeSpent?: number;
     completionPercentage?: number;
-    metadata?: any;
+    metadata?: AnalyticsMetadata;
   }>) {
     const results = [];
     
@@ -178,13 +179,18 @@ export class AnalyticsService {
       }
     });
 
-    const statusMap = new Map<string, Map<string, any>>();
+    const statusMap = new Map<string, Map<string, {
+      status: ProgressStatus;
+      completionPercentage: number;
+      timeSpent: number;
+      lastInteractionAt: Date;
+    }>>();
     
     // Inicializar mapas para cada usuario
     userIds.forEach(userId => {
       statusMap.set(userId, new Map());
       lessonIds.forEach(lessonId => {
-        statusMap.get(userId)?.set(lessonId, { status: ProgressStatus.NOT_STARTED });
+        statusMap.get(userId)?.set(lessonId, { status: ProgressStatus.NOT_STARTED, completionPercentage: 0, timeSpent: 0, lastInteractionAt: new Date() });
       });
     });
 
