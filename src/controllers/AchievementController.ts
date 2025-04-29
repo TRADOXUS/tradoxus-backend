@@ -16,7 +16,7 @@ export class AchievementController {
             
         const achievements = await this.achievementService.findAll(page, limit);
         if (!achievements) {
-            throw new AppError('Failed to fetch achievements', 500);
+            throw new AppError(500, 'Failed to fetch achievements');
         }
         res.json({
             status: 'success',
@@ -28,11 +28,11 @@ export class AchievementController {
         try {
             const achievement = await this.achievementService.findOne(req.params.id);
             if (!achievement) {
-                throw new AppError('Achievement not found', 404);
+                throw new AppError(404, 'Achievement not found');
             }
             res.json({ status: 'success', data: achievement });
         } catch (err) {
-            throw new AppError('Failed to fetch achievement', 500);
+            throw new AppError(500, 'Failed to fetch achievement');
         }
     }
     async findByModuleId(req: Request, res: Response): Promise<Response> {
@@ -57,7 +57,7 @@ export class AchievementController {
             const achievements = await this.achievementService.getUserAchievements(req.params.userId);
             res.json({ status: 'success', data: achievements });
         } catch (err) {
-            throw new AppError('Failed to fetch user achievements', 500);
+            throw new AppError(500, 'Failed to fetch user achievements');
         }
     }
 
@@ -66,7 +66,7 @@ export class AchievementController {
             const achievement = await this.achievementService.claimAchievement(req.params.userId, req.params.achievementId);
             res.json({ status: 'success', data: achievement });
         } catch (err) {
-            throw new AppError('Failed to claim achievement', 500);
+            throw new AppError(500, 'Failed to claim achievement');
         }
     }
 
@@ -75,7 +75,7 @@ export class AchievementController {
             const progress = await this.achievementService.getUserProgress(req.params.userId);
             res.json({ status: 'success', data: progress });
         } catch (err) {
-            throw new AppError('Failed to fetch user progress', 500);
+            throw new AppError(500, 'Failed to fetch user progress');
         }
     }
 
@@ -84,7 +84,7 @@ export class AchievementController {
             const { userId, achievementId, progress } = req.body;
     
             if (!userId || !achievementId || progress === undefined) {
-                throw new AppError("Missing required parameters", 400);
+                throw new AppError(400, "Missing required parameters");
             }
     
             const updatedProgress = await this.achievementService.updateProgress(userId, achievementId, progress);
@@ -105,7 +105,7 @@ export class AchievementController {
             const leaderboard = await this.achievementService.getLeaderboard();
             res.json({ status: 'success', data: leaderboard });
         } catch (err) {
-            throw new AppError('Failed to fetch leaderboard', 500);
+            throw new AppError(500, 'Failed to fetch leaderboard');
         }
     }
 
@@ -114,7 +114,7 @@ export class AchievementController {
             const stats = await this.achievementService.getStatistics();
             res.json({ status: 'success', data: stats });
         } catch (err) {
-            throw new AppError('Failed to fetch achievement statistics', 500);
+            throw new AppError(500, 'Failed to fetch achievement statistics');
         }
     }
 
@@ -123,7 +123,7 @@ export class AchievementController {
             const rate = await this.achievementService.getCompletionRate();
             res.json({ status: 'success', data: rate });
         } catch (err) {
-            throw new AppError('Failed to fetch achievement completion rate', 500);
+            throw new AppError(500, 'Failed to fetch achievement completion rate');
         }
     }
 
@@ -132,7 +132,7 @@ export class AchievementController {
             const popular = await this.achievementService.getPopularAchievements();
             res.json({ status: 'success', data: popular });
         } catch (err) {
-            throw new AppError('Failed to fetch popular achievements', 500);
+            throw new AppError(500, 'Failed to fetch popular achievements');
         }
     }
 }
