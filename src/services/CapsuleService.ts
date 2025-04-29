@@ -1,4 +1,4 @@
-import { Capsule, CapsuleType } from "../entities/Capsule";
+import { Capsule, CapsuleType, CapsuleContent } from "../entities/Capsule";
 import { BaseService } from "./BaseService";
 import { Lesson } from "../entities/Lesson";
 import { AppDataSource } from "../config/database";
@@ -14,7 +14,7 @@ export class CapsuleService extends BaseService<Capsule> {
         const lesson = await lessonRepository.findOne({ where: { id: lessonId } });
         
         if (!lesson) {
-            throw new AppError('Lesson not found', 404);
+            throw new AppError(404, 'Lesson not found');
         }
 
         const capsule = this.repository.create({
@@ -64,10 +64,10 @@ export class CapsuleService extends BaseService<Capsule> {
         }
     }
 
-    async updateContent(id: string, content: Record<string, any>): Promise<Capsule | null> {
+    async updateContent(id: string, content: CapsuleContent): Promise<Capsule | null> {
         const capsule = await this.findOne(id);
         if (!capsule) {
-            throw new AppError('Capsule not found', 404);
+            throw new AppError(404, 'Capsule not found');
         }
 
         capsule.content = content;

@@ -6,6 +6,10 @@ export class StartLessonProgressDto {
   lessonId: string;
 }
 
+export interface InteractionEventData {
+  [key: string]: string | number | boolean | null | undefined | Record<string, unknown>;
+}
+
 export class UpdateLessonProgressDto {
   @IsUUID()
   lessonId: string;
@@ -30,7 +34,7 @@ export class UpdateLessonProgressDto {
     interactionEvents?: Array<{
       type: string;
       timestamp: Date;
-      data: any;
+      data: InteractionEventData;
     }>;
   };
 }

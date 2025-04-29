@@ -40,6 +40,7 @@ describe('Course Controller Tests', () => {
         description: 'Test Description',
         isPublished: false,
         modules: [],
+        lessons: [],
         createdAt: new Date(),
         updatedAt: new Date()
     };
@@ -69,7 +70,9 @@ describe('Course Controller Tests', () => {
         router.patch('/courses/:id/toggle-publish', asyncHandler((req, res) => courseController.togglePublish(req, res)));
         
         app.use('/api', router);
-        app.use(errorHandler);
+        app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+            errorHandler(err, req, res, next);
+        });
         
         // Reset mock implementations
         courseService.create.mockImplementation(async (data: any) => ({
@@ -78,6 +81,7 @@ describe('Course Controller Tests', () => {
             description: data?.description || 'Test Description',
             isPublished: false,
             modules: [],
+            lessons: [],
             createdAt: new Date(),
             updatedAt: new Date()
         }));
@@ -89,6 +93,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: false,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             }],
@@ -103,6 +108,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: false,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -116,6 +122,7 @@ describe('Course Controller Tests', () => {
                 description: data?.description || 'Test Description',
                 isPublished: data?.isPublished || false,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -134,6 +141,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: false,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -147,6 +155,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: true,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -159,6 +168,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: true,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             }],
@@ -174,6 +184,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: false,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -191,7 +202,8 @@ describe('Course Controller Tests', () => {
                 title: mockResponse.title,
                 description: mockResponse.description,
                 isPublished: mockResponse.isPublished,
-                modules: mockResponse.modules
+                modules: mockResponse.modules,
+                lessons: mockResponse.lessons
             });
             expect(new Date(responseBody.data.createdAt)).toBeInstanceOf(Date);
             expect(new Date(responseBody.data.updatedAt)).toBeInstanceOf(Date);
@@ -209,9 +221,7 @@ describe('Course Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'error',
-                error: {
-                    message: 'Failed to create course'
-                }
+                message: 'Failed to create course'
             });
         });
     });
@@ -225,6 +235,7 @@ describe('Course Controller Tests', () => {
                     description: 'Test Description',
                     isPublished: false,
                     modules: [],
+                    lessons: [],
                     createdAt: new Date(),
                     updatedAt: new Date()
                 }],
@@ -244,7 +255,8 @@ describe('Course Controller Tests', () => {
                 title: mockResponse.items[0].title,
                 description: mockResponse.items[0].description,
                 isPublished: mockResponse.items[0].isPublished,
-                modules: mockResponse.items[0].modules
+                modules: mockResponse.items[0].modules,
+                lessons: mockResponse.items[0].lessons
             });
             expect(new Date(responseBody.data[0].createdAt)).toBeInstanceOf(Date);
             expect(new Date(responseBody.data[0].updatedAt)).toBeInstanceOf(Date);
@@ -267,9 +279,7 @@ describe('Course Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'error',
-                error: {
-                    message: 'Failed to fetch courses'
-                }
+                message: 'Failed to fetch courses'
             });
         });
     });
@@ -282,6 +292,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: false,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -301,7 +312,8 @@ describe('Course Controller Tests', () => {
                 title: mockResponse.title,
                 description: mockResponse.description,
                 isPublished: mockResponse.isPublished,
-                modules: mockResponse.modules
+                modules: mockResponse.modules,
+                lessons: mockResponse.lessons
             });
             expect(new Date(responseBody.data.createdAt)).toBeInstanceOf(Date);
             expect(new Date(responseBody.data.updatedAt)).toBeInstanceOf(Date);
@@ -315,10 +327,8 @@ describe('Course Controller Tests', () => {
                 .expect(404);
 
             expect(response.body).toEqual({
-                status: 'fail',
-                error: {
-                    message: 'Course not found'
-                }
+                status: 'error',
+                message: 'Course not found'
             });
         });
 
@@ -333,9 +343,7 @@ describe('Course Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'error',
-                error: {
-                    message: 'Failed to fetch course'
-                }
+                message: 'Failed to fetch course'
             });
         });
     });
@@ -348,6 +356,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: false,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -368,7 +377,8 @@ describe('Course Controller Tests', () => {
                 title: mockResponse.title,
                 description: mockResponse.description,
                 isPublished: mockResponse.isPublished,
-                modules: mockResponse.modules
+                modules: mockResponse.modules,
+                lessons: mockResponse.lessons
             });
             expect(new Date(responseBody.data.createdAt)).toBeInstanceOf(Date);
             expect(new Date(responseBody.data.updatedAt)).toBeInstanceOf(Date);
@@ -383,10 +393,8 @@ describe('Course Controller Tests', () => {
                 .expect(404);
 
             expect(response.body).toEqual({
-                status: 'fail',
-                error: {
-                    message: 'Course not found'
-                }
+                status: 'error',
+                message: 'Course not found'
             });
         });
 
@@ -402,9 +410,7 @@ describe('Course Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'error',
-                error: {
-                    message: 'Failed to update course'
-                }
+                message: 'Failed to update course'
             });
         });
     });
@@ -429,10 +435,8 @@ describe('Course Controller Tests', () => {
                 .expect(404);
 
             expect(response.body).toEqual({
-                status: 'fail',
-                error: {
-                    message: 'Course not found'
-                }
+                status: 'error',
+                message: 'Course not found'
             });
         });
 
@@ -447,9 +451,7 @@ describe('Course Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'error',
-                error: {
-                    message: 'Failed to delete course'
-                }
+                message: 'Failed to delete course'
             });
         });
     });
@@ -462,6 +464,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: false,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -481,7 +484,8 @@ describe('Course Controller Tests', () => {
                 title: mockResponse.title,
                 description: mockResponse.description,
                 isPublished: mockResponse.isPublished,
-                modules: mockResponse.modules
+                modules: mockResponse.modules,
+                lessons: mockResponse.lessons
             });
             expect(new Date(responseBody.data.createdAt)).toBeInstanceOf(Date);
             expect(new Date(responseBody.data.updatedAt)).toBeInstanceOf(Date);
@@ -495,10 +499,8 @@ describe('Course Controller Tests', () => {
                 .expect(404);
 
             expect(response.body).toEqual({
-                status: 'fail',
-                error: {
-                    message: 'Course not found'
-                }
+                status: 'error',
+                message: 'Course not found'
             });
         });
 
@@ -513,9 +515,7 @@ describe('Course Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'error',
-                error: {
-                    message: 'Failed to fetch course with modules'
-                }
+                message: 'Failed to fetch course with modules'
             });
         });
     });
@@ -528,6 +528,7 @@ describe('Course Controller Tests', () => {
                 description: 'Test Description',
                 isPublished: true,
                 modules: [],
+                lessons: [],
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -547,7 +548,8 @@ describe('Course Controller Tests', () => {
                 title: mockResponse.title,
                 description: mockResponse.description,
                 isPublished: mockResponse.isPublished,
-                modules: mockResponse.modules
+                modules: mockResponse.modules,
+                lessons: mockResponse.lessons
             });
             expect(new Date(responseBody.data.createdAt)).toBeInstanceOf(Date);
             expect(new Date(responseBody.data.updatedAt)).toBeInstanceOf(Date);
@@ -561,10 +563,8 @@ describe('Course Controller Tests', () => {
                 .expect(404);
 
             expect(response.body).toEqual({
-                status: 'fail',
-                error: {
-                    message: 'Course not found'
-                }
+                status: 'error',
+                message: 'Course not found'
             });
         });
 
@@ -579,9 +579,7 @@ describe('Course Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'error',
-                error: {
-                    message: 'Failed to toggle course publish status'
-                }
+                message: 'Failed to toggle course publish status'
             });
         });
     });
@@ -595,6 +593,7 @@ describe('Course Controller Tests', () => {
                     description: 'Test Description',
                     isPublished: true,
                     modules: [],
+                    lessons: [],
                     createdAt: new Date(),
                     updatedAt: new Date()
                 }],
@@ -614,7 +613,8 @@ describe('Course Controller Tests', () => {
                 title: mockResponse.items[0].title,
                 description: mockResponse.items[0].description,
                 isPublished: mockResponse.items[0].isPublished,
-                modules: mockResponse.items[0].modules
+                modules: mockResponse.items[0].modules,
+                lessons: mockResponse.items[0].lessons
             });
             expect(new Date(responseBody.data[0].createdAt)).toBeInstanceOf(Date);
             expect(new Date(responseBody.data[0].updatedAt)).toBeInstanceOf(Date);
@@ -637,9 +637,7 @@ describe('Course Controller Tests', () => {
 
             expect(response.body).toEqual({
                 status: 'error',
-                error: {
-                    message: 'Failed to fetch published courses'
-                }
+                message: 'Failed to fetch published courses'
             });
         });
     });

@@ -1,6 +1,4 @@
 import { LessonService } from '../../services/LessonService';
-import { Lesson } from '../../entities/Lesson';
-import { Module } from '../../entities/Module';
 import { AppDataSource } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 

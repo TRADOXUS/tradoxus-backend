@@ -2,8 +2,6 @@ import request from 'supertest';
 import express from 'express';
 import { createLessonRouter } from '../../routes/lessonRoutes';
 import { LessonController } from '../../controllers/LessonController';
-import { validateRequest } from '../../middleware/validateRequest';
-import { CreateLessonDto, UpdateLessonDto } from '../../dto/LessonDto';
 
 // Mock the controller
 jest.mock('../../controllers/LessonController');

@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import routes from '../routes';
 import { errorHandler } from '../middleware/errorHandler';
+import { Request, Response, NextFunction } from 'express';
 
 const app = express();
 
@@ -24,8 +25,10 @@ app.use((req, res) => {
   });
 });
 
-// Error handler should be last
-app.use(errorHandler);
+// Fix errorHandler usage
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  errorHandler(err, req, res, next);
+});
 
 describe('Express App Tests', () => {
   it('should respond with 404 for unknown routes', async () => {

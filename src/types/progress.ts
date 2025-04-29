@@ -4,10 +4,25 @@ export enum ProgressStatus {
   COMPLETED = 'COMPLETED'
 }
 
+export type MetadataValue = string | number | boolean | null | undefined | Record<string, string | number | boolean | null | undefined>;
+
+export interface InteractionEventMetadata {
+  [key: string]: MetadataValue;
+}
+
+export interface EngagementMetrics {
+  totalInteractions: number;
+  averageTimePerInteraction: number;
+  completionRate: number;
+  lastInteractionAt: Date;
+  interactionTypes: Record<string, number>;
+  customMetrics?: Record<string, string | number | boolean>;
+}
+
 export interface InteractionEvent {
   type: string;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: InteractionEventMetadata;
 }
 
 export interface LessonProgressMetadata {
@@ -34,7 +49,7 @@ export interface LessonAnalytics {
   averageCompletionPercentage: number;
   completionRate: number;
   averageScore?: number;
-  engagementMetrics?: Record<string, any>;
+  engagementMetrics?: EngagementMetrics;
 }
 
 export interface CourseCompletionRate {

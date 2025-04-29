@@ -1,87 +1,48 @@
 import { LessonProgressService } from '../../services/LessonProgressService';
 import { LessonProgress } from '../../entities/LessonProgress';
-import { User } from '../../entities/User';
 import { Lesson } from '../../entities/Lesson';
 import { Course } from '../../entities/Course';
 import { ProgressStatus } from '../../types/progress';
 import { StartLessonProgressDto, UpdateLessonProgressDto, CompleteLessonProgressDto } from '../../dto/LessonProgress.dto';
+import { Repository } from 'typeorm';
 
 // Mock de los repositorios
-jest.mock('../../repositories/LessonProgressRepository', () => ({
-  LessonProgressRepository: jest.fn().mockImplementation(() => ({
+jest.mock('typeorm', () => ({
+  Repository: jest.fn().mockImplementation(() => ({
     findOne: jest.fn(),
     find: jest.fn(),
     save: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
   })),
-}));
-
-jest.mock('../../repositories/UserRepository', () => ({
-  UserRepository: jest.fn().mockImplementation(() => ({
-    findOne: jest.fn(),
-  })),
-}));
-
-jest.mock('../../repositories/LessonRepository', () => ({
-  LessonRepository: jest.fn().mockImplementation(() => ({
-    findOne: jest.fn(),
-    find: jest.fn(),
-  })),
-}));
-
-jest.mock('../../repositories/CourseRepository', () => ({
-  CourseRepository: jest.fn().mockImplementation(() => ({
-    findOne: jest.fn(),
-  })),
+  PrimaryGeneratedColumn: jest.fn(),
+  Column: jest.fn(),
+  Entity: jest.fn(),
+  ManyToOne: jest.fn(),
+  OneToMany: jest.fn(),
+  CreateDateColumn: jest.fn(),
+  UpdateDateColumn: jest.fn(),
+  DeleteDateColumn: jest.fn(),
 }));
 
 describe('LessonProgressService', () => {
   let service: LessonProgressService;
-  let mockUser: Partial<User>;
   let mockLesson: Partial<Lesson>;
   let mockCourse: Partial<Course>;
   let mockProgress: Partial<LessonProgress>;
 
   beforeEach(() => {
     // Create repository mocks
-    const lessonProgressRepository = {
-      findOne: jest.fn(),
-      find: jest.fn(),
-      save: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    };
-
-    const lessonRepository = {
-      findOne: jest.fn(),
-      find: jest.fn(),
-      save: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    };
+    const lessonProgressRepository = new Repository<LessonProgress>(LessonProgress, null as any);
+    const lessonRepository = new Repository<Lesson>(Lesson, null as any);
 
     // Initialize service
     service = new LessonProgressService(
-      lessonProgressRepository as any,
-      lessonRepository as any
+      lessonProgressRepository,
+      lessonRepository
     );
 
     // Create mocks
-    mockUser = {
-      id: 'user-1',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      passwordHash: 'hashedPassword',
-      isAdmin: false,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastLoginAt: new Date(),
-      lessonProgress: []
-    };
-
     mockCourse = {
       id: 'course-1',
       title: 'Test Course',
@@ -104,7 +65,7 @@ describe('LessonProgressService', () => {
       id: 'progress-1',
       userId: 'user-1',
       lesson: mockLesson as Lesson,
-      status: ProgressStatus.NOT_STARTED,
+      status: ProgressStatus.IN_PROGRESS,
       startedAt: new Date(),
       timeSpent: 0,
       lastInteractionAt: new Date(),

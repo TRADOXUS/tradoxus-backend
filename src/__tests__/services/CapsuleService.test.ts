@@ -1,6 +1,5 @@
 import { CapsuleService } from '../../services/CapsuleService';
-import { Capsule, CapsuleType } from '../../entities/Capsule';
-import { Lesson } from '../../entities/Lesson';
+import { CapsuleType } from '../../entities/Capsule';
 import { AppDataSource } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 

@@ -43,6 +43,9 @@ class Achievement {
 
   @Column("jsonb")
   rewards: Reward[];
+
+  @Column("jsonb", { nullable: true })
+  metadata: AchievementMetadata;
 }
 
 @Entity()
@@ -68,7 +71,7 @@ class UserAchievement {
   @Column("jsonb", { nullable: true })
   metadata: {
     moduleId?: string;
-    completionDetails?: any;
+    completionDetails?: CompletionDetails;
     attempts?: number;
   };
 }
@@ -79,9 +82,23 @@ interface AchievementCriteria {
   targetValue: number;
 }
 
+interface CompletionDetails {
+  score?: number;
+  timeSpent?: number;
+  attempts?: number;
+  perfectScore?: boolean;
+  streakDays?: number;
+}
+
+interface AchievementMetadata {
+  moduleId?: string;
+  completionDetails?: CompletionDetails;
+  attempts?: number;
+}
+
 interface Reward {
   type: string;
-  value: any;
+  value: string | number | boolean | Record<string, unknown>;
 }
 
 export { Achievement, UserAchievement, AchievementType, AchievementCategory, AchievementCriteria, Reward };

@@ -1,8 +1,8 @@
 import { AuthService } from '../../services/AuthService';
-import { RegisterDto, VerifyWalletDto } from '../../dto/AuthDto';
+import { VerifyWalletDto } from '../../dto/AuthDto';
+import { Repository } from 'typeorm';
 import { User } from '../../entities/User';
-import * as walletUtils from '../../utils/walletUtils';
-import * as jwtUtils from '../../utils/jwtUtils';
+import { AppDataSource } from '../../config/database';
 
 // Mock the AppDataSource
 jest.mock('../../config/database', () => ({
@@ -28,11 +28,11 @@ jest.mock('../../utils/jwtUtils', () => ({
 
 describe('AuthService', () => {
   let authService: AuthService;
-  let mockUserRepository: any;
+  let mockUserRepository: Repository<User>;
 
   beforeEach(() => {
-    authService = new AuthService();
-    mockUserRepository = require('../../config/database').AppDataSource.getRepository();
+    mockUserRepository = AppDataSource.getRepository(User);
+    authService = new AuthService(mockUserRepository);
     
     // Reset mock calls
     jest.clearAllMocks();

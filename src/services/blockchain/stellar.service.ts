@@ -7,7 +7,7 @@ import config from '../../config/config';
  * managing accounts, and executing transactions for the NFT certificate system.
  */
 class StellarService {
-  private server: any; // Using any type to avoid TypeScript errors
+  private server: StellarSdk.Horizon.Server;
   private networkPassphrase: string;
   
   constructor() {

@@ -14,7 +14,7 @@ export class LessonService extends BaseService<Lesson> {
         const module = await moduleRepository.findOne({ where: { id: moduleId } });
         
         if (!module) {
-            throw new AppError('Module not found', 404);
+            throw new AppError(404, 'Module not found');
         }
 
         const lesson = this.repository.create({
@@ -69,7 +69,7 @@ export class LessonService extends BaseService<Lesson> {
     async updatePrerequisites(id: string, prerequisites: string[]): Promise<Lesson | null> {
         const lesson = await this.findOne(id);
         if (!lesson) {
-            throw new AppError('Lesson not found', 404);
+            throw new AppError(404, 'Lesson not found');
         }
 
         lesson.prerequisites = prerequisites;

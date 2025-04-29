@@ -1,6 +1,10 @@
 import { IsArray, IsUUID, IsOptional, IsNumber, IsObject } from 'class-validator';
 import { ProgressStatus } from '../entities/LessonProgress';
 
+export interface AnalyticsMetadata {
+    [key: string]: string | number | boolean | null | undefined;
+}
+
 export class BulkUpdateItemDto {
   @IsUUID()
   userId: string;
@@ -21,7 +25,7 @@ export class BulkUpdateItemDto {
   
   @IsOptional()
   @IsObject()
-  metadata?: any;
+  metadata?: AnalyticsMetadata;
 }
 
 export class BulkUpdateDto {

@@ -17,7 +17,7 @@ export class CourseController {
                 data: course
             });
         } catch (err) {
-            throw new AppError('Failed to create course', 500);
+            throw new AppError(500, 'Failed to create course');
         }
     }
 
@@ -28,7 +28,7 @@ export class CourseController {
             const result = await this.courseService.findAll(page, limit);
             
             if (!result) {
-                throw new AppError('Failed to fetch courses', 500);
+                throw new AppError(500, 'Failed to fetch courses');
             }
 
             res.json({
@@ -45,7 +45,7 @@ export class CourseController {
             if (err instanceof AppError) {
                 throw err;
             }
-            throw new AppError('Failed to fetch courses', 500);
+            throw new AppError(500, 'Failed to fetch courses');
         }
     }
 
@@ -53,7 +53,7 @@ export class CourseController {
         try {
             const course = await this.courseService.findOne(req.params.id);
             if (!course) {
-                throw new AppError('Course not found', 404);
+                throw new AppError(404, 'Course not found');
             }
             res.json({
                 status: 'success',
@@ -63,7 +63,7 @@ export class CourseController {
             if (err instanceof AppError) {
                 throw err;
             }
-            throw new AppError('Failed to fetch course', 500);
+            throw new AppError(500, 'Failed to fetch course');
         }
     }
 
@@ -71,7 +71,7 @@ export class CourseController {
         try {
             const course = await this.courseService.update(req.params.id, req.body);
             if (!course) {
-                throw new AppError('Course not found', 404);
+                throw new AppError(404, 'Course not found');
             }
             res.json({
                 status: 'success',
@@ -81,7 +81,7 @@ export class CourseController {
             if (err instanceof AppError) {
                 throw err;
             }
-            throw new AppError('Failed to update course', 500);
+            throw new AppError(500, 'Failed to update course');
         }
     }
 
@@ -89,14 +89,14 @@ export class CourseController {
         try {
             const result = await this.courseService.delete(req.params.id);
             if (!result) {
-                throw new AppError('Course not found', 404);
+                throw new AppError(404, 'Course not found');
             }
             res.status(204).send();
         } catch (err) {
             if (err instanceof AppError) {
                 throw err;
             }
-            throw new AppError('Failed to delete course', 500);
+            throw new AppError(500, 'Failed to delete course');
         }
     }
 
@@ -104,7 +104,7 @@ export class CourseController {
         try {
             const course = await this.courseService.getCourseWithModules(req.params.id);
             if (!course) {
-                throw new AppError('Course not found', 404);
+                throw new AppError(404, 'Course not found');
             }
             res.json({
                 status: 'success',
@@ -114,7 +114,7 @@ export class CourseController {
             if (err instanceof AppError) {
                 throw err;
             }
-            throw new AppError('Failed to fetch course with modules', 500);
+            throw new AppError(500, 'Failed to fetch course with modules');
         }
     }
 
@@ -122,7 +122,7 @@ export class CourseController {
         try {
             const course = await this.courseService.togglePublish(req.params.id);
             if (!course) {
-                throw new AppError('Course not found', 404);
+                throw new AppError(404, 'Course not found');
             }
             res.json({
                 status: 'success',
@@ -132,7 +132,7 @@ export class CourseController {
             if (err instanceof AppError) {
                 throw err;
             }
-            throw new AppError('Failed to toggle course publish status', 500);
+            throw new AppError(500, 'Failed to toggle course publish status');
         }
     }
 
@@ -143,7 +143,7 @@ export class CourseController {
             const result = await this.courseService.getPublishedCourses(page, limit);
             
             if (!result) {
-                throw new AppError('Failed to fetch published courses', 500);
+                throw new AppError(500, 'Failed to fetch published courses');
             }
 
             res.json({
@@ -160,7 +160,7 @@ export class CourseController {
             if (err instanceof AppError) {
                 throw err;
             }
-            throw new AppError('Failed to fetch published courses', 500);
+            throw new AppError(500, 'Failed to fetch published courses');
         }
     }
 } 

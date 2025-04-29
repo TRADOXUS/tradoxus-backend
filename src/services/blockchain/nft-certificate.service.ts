@@ -6,6 +6,18 @@ import config from '../../config/config';
  * This service provides methods for creating, transferring, and verifying NFT certificates
  * using the Stellar blockchain.
  */
+export interface CertificateData {
+    id: string;
+    courseId: string;
+    courseName: string;
+    studentName: string;
+    completionDate: string;
+    grade?: string;
+    instructorName?: string;
+    institutionName?: string;
+    metadata?: Record<string, string | number | boolean>;
+}
+
 class NFTCertificateService {
   /**
    * Create a new NFT certificate on the Stellar blockchain
@@ -13,7 +25,7 @@ class NFTCertificateService {
    * @param recipientPublicKey - The public key of the certificate recipient
    * @returns The transaction result
    */
-  async createCertificate(certificateData: any, recipientPublicKey: string) {
+  async createCertificate(certificateData: CertificateData, recipientPublicKey: string) {
     try {
       // Ensure we have a secret key for the issuer
       if (!config.web3.stellar.secretKey) {

@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
-import rateLimit from 'express-rate-limit';
+import { AuthService } from '../services/AuthService';
+import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
-const authController = new AuthController(User);
+const userRepository = AppDataSource.getRepository(User);
+const authService = new AuthService(userRepository);
+const authController = new AuthController(authService);
 
 // Rate limiting for registration and login attempts
 const authLimiter = rateLimit({

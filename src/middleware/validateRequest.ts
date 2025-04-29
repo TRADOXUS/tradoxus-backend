@@ -2,7 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 
-export const validateRequest = (dtoClass: any) => {
+interface ValidatableClass {
+    new (...args: unknown[]): object;
+}
+
+export const validateRequest = (dtoClass: ValidatableClass) => {
     return (req: Request, res: Response, next: NextFunction): void => {
         const dtoObject = plainToClass(dtoClass, req.body);
         validate(dtoObject)

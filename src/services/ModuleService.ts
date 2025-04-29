@@ -14,7 +14,7 @@ export class ModuleService extends BaseService<Module> {
         const course = await courseRepository.findOne({ where: { id: courseId } });
         
         if (!course) {
-            throw new AppError('Course not found', 404);
+            throw new AppError(404, 'Course not found');
         }
 
         const module = this.repository.create({

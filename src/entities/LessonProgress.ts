@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Lesson } from './Lesson';
+import { InteractionEventData } from '../dto/LessonProgress.dto';
 
 export enum ProgressStatus {
   NOT_STARTED = 'NOT_STARTED',
@@ -50,7 +51,7 @@ export class LessonProgress {
     interactionEvents: Array<{
       type: string;
       timestamp: Date;
-      data: any;
+      data: InteractionEventData;
     }>;
   };
 

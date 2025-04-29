@@ -15,7 +15,7 @@ interface TokenPayload {
 export const generateToken = (user: User): string => {
   const payload: TokenPayload = {
     userId: user.id,
-    walletAddress: user.walletAddress,
+    walletAddress: user.walletAddress || '',
   };
 
   const mockToken = Buffer.from(JSON.stringify(payload)).toString('base64');

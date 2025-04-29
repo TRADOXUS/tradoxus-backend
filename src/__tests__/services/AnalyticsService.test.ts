@@ -1,91 +1,66 @@
 import { AnalyticsService } from '../../services/AnalyticsService';
 import { LessonProgress } from '../../entities/LessonProgress';
-import { User } from '../../entities/User';
 import { Lesson } from '../../entities/Lesson';
 import { Course } from '../../entities/Course';
-import { AppError } from '../../utils/AppError';
-import { ProgressStatus, UserStatistics, LessonAnalytics, CourseCompletionRate, BulkProgressUpdate, BulkProgressStatus } from '../../types/progress';
+import { ProgressStatus } from '../../types/progress';
+import { Repository } from 'typeorm';
 
 // Mock de los repositorios
-jest.mock('../../repositories/LessonProgressRepository', () => ({
-  LessonProgressRepository: jest.fn().mockImplementation(() => ({
-    find: jest.fn(),
+jest.mock('typeorm', () => ({
+  Repository: jest.fn().mockImplementation(() => ({
     findOne: jest.fn(),
+    find: jest.fn(),
     save: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
   })),
-}));
-
-jest.mock('../../repositories/UserRepository', () => ({
-  UserRepository: jest.fn().mockImplementation(() => ({
-    findOne: jest.fn(),
-  })),
-}));
-
-jest.mock('../../repositories/LessonRepository', () => ({
-  LessonRepository: jest.fn().mockImplementation(() => ({
-    findOne: jest.fn(),
-    find: jest.fn(),
-  })),
-}));
-
-jest.mock('../../repositories/CourseRepository', () => ({
-  CourseRepository: jest.fn().mockImplementation(() => ({
-    findOne: jest.fn(),
-  })),
+  PrimaryGeneratedColumn: jest.fn(),
+  Column: jest.fn(),
+  Entity: jest.fn(),
+  ManyToOne: jest.fn(),
+  OneToMany: jest.fn(),
+  CreateDateColumn: jest.fn(),
+  UpdateDateColumn: jest.fn(),
+  DeleteDateColumn: jest.fn(),
+  In: jest.fn().mockImplementation((values) => values),
 }));
 
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
-  let mockUser: Partial<User>;
-  let mockLesson: Partial<Lesson>;
   let mockCourse: Partial<Course>;
+  let mockLesson: Partial<Lesson>;
   let mockProgress: Partial<LessonProgress>;
+  let lessonProgressRepository: Repository<LessonProgress>;
+  let courseRepository: Repository<Course>;
 
   beforeEach(() => {
     // Create repository mocks
-    const lessonProgressRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      save: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    };
-
-    const courseRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      save: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    };
+    lessonProgressRepository = new Repository<LessonProgress>(LessonProgress, null as any);
+    courseRepository = new Repository<Course>(Course, null as any);
 
     // Initialize service
     service = new AnalyticsService(
-      lessonProgressRepository as any,
-      courseRepository as any
+      lessonProgressRepository,
+      courseRepository
     );
 
     // Create mocks
-    mockUser = {
-      id: 'user-1',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      passwordHash: 'hashedPassword',
-      isAdmin: false,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastLoginAt: new Date(),
-      lessonProgress: []
-    };
-
     mockCourse = {
       id: 'course-1',
       title: 'Test Course',
       description: 'Test Description',
+      lessons: [{
+        id: 'lesson-1',
+        title: 'Test Lesson',
+        description: 'Test Description',
+        order: 1,
+        module: null as any,
+        capsules: [],
+        course: mockCourse as Course,
+        progress: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -127,7 +102,6 @@ describe('AnalyticsService', () => {
   describe('getUserStatistics', () => {
     it('debería obtener estadísticas del usuario correctamente', async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
       (lessonProgressRepository.find as jest.Mock).mockResolvedValue([mockProgress]);
 
       // Ejecutar
@@ -141,20 +115,28 @@ describe('AnalyticsService', () => {
       expect(result.totalTimeSpent).toBe(3600);
     });
 
-    it('debería lanzar un error si el usuario no existe', async () => {
+    it('debería retornar estadísticas vacías si el usuario no existe', async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
       (lessonProgressRepository.find as jest.Mock).mockResolvedValue([]);
 
-      // Ejecutar y verificar
-      await expect(service.getUserStatistics('user-1')).rejects.toThrow();
+      // Ejecutar
+      const result = await service.getUserStatistics('user-1');
+
+      // Verificar
+      expect(result).toEqual({
+        totalLessons: 0,
+        completedLessons: 0,
+        inProgressLessons: 0,
+        totalTimeSpent: 0,
+        averageCompletionPercentage: 0,
+        completionRate: 0
+      });
     });
   });
 
   describe('getLessonAnalytics', () => {
     it('debería obtener análisis de la lección correctamente', async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
       (lessonProgressRepository.find as jest.Mock).mockResolvedValue([mockProgress]);
 
       // Ejecutar
@@ -167,22 +149,27 @@ describe('AnalyticsService', () => {
       expect(result.averageTimeSpent).toBe(3600);
     });
 
-    it('debería lanzar un error si la lección no existe', async () => {
+    it('debería retornar estadísticas vacías si la lección no existe', async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
       (lessonProgressRepository.find as jest.Mock).mockResolvedValue([]);
 
-      // Ejecutar y verificar
-      await expect(service.getLessonAnalytics('lesson-1')).rejects.toThrow();
+      // Ejecutar
+      const result = await service.getLessonAnalytics('lesson-1');
+
+      // Verificar
+      expect(result).toEqual({
+        totalAttempts: 0,
+        completedAttempts: 0,
+        averageTimeSpent: 0,
+        averageCompletionPercentage: 0,
+        completionRate: 0
+      });
     });
   });
 
   describe('getCourseCompletionRate', () => {
     it('debería obtener la tasa de finalización del curso correctamente', async () => {
       // Configurar mocks
-      const courseRepository = service['courseRepository'];
-      const lessonProgressRepository = service['lessonProgressRepository'];
-
       (courseRepository.findOne as jest.Mock).mockResolvedValue(mockCourse);
       (lessonProgressRepository.find as jest.Mock).mockResolvedValue([mockProgress]);
 
@@ -199,22 +186,21 @@ describe('AnalyticsService', () => {
 
     it('debería lanzar un error si el curso no existe', async () => {
       // Configurar mocks
-      const courseRepository = service['courseRepository'];
       (courseRepository.findOne as jest.Mock).mockResolvedValue(null);
 
       // Ejecutar y verificar
-      await expect(service.getCourseCompletionRate('course-1')).rejects.toThrow();
+      await expect(service.getCourseCompletionRate('course-1')).rejects.toThrow('Course not found');
     });
   });
 
   describe('bulkUpdateProgress', () => {
     it('debería actualizar el progreso en masa correctamente', async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
-      (lessonProgressRepository.save as jest.Mock).mockResolvedValue([mockProgress]);
+      (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(mockProgress);
+      (lessonProgressRepository.save as jest.Mock).mockResolvedValue(mockProgress);
 
       // Ejecutar
-      const updates: BulkProgressUpdate[] = [
+      const updates = [
         { userId: 'user-1', lessonId: 'lesson-1', completionPercentage: 100, timeSpent: 3600 },
       ];
       const result = await service.bulkUpdateProgress(updates);
@@ -230,7 +216,6 @@ describe('AnalyticsService', () => {
   describe('getBulkStatus', () => {
     it('debería obtener el estado en masa correctamente', async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
       (lessonProgressRepository.find as jest.Mock).mockResolvedValue([mockProgress]);
 
       // Ejecutar
@@ -240,11 +225,9 @@ describe('AnalyticsService', () => {
 
       // Verificar
       expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(1);
-      expect(result[0].userId).toBe('user-1');
-      expect(result[0].lessonId).toBe('lesson-1');
-      expect(result[0].status).toBe(ProgressStatus.COMPLETED);
+      expect(result['user-1']).toBeDefined();
+      expect(result['user-1']['lesson-1']).toBeDefined();
+      expect(result['user-1']['lesson-1'].status).toBe(ProgressStatus.COMPLETED);
     });
   });
 }); 

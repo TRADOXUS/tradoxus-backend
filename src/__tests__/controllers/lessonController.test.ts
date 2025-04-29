@@ -5,11 +5,11 @@ import helmet from 'helmet';
 import { describe, it, expect, beforeEach, jest, afterAll } from '@jest/globals';
 import routes from '../../routes';
 import { errorHandler } from '../../middleware/errorHandler';
-import { LessonController } from '../../controllers/LessonController';
 import { AppDataSource } from '../../config/database';
 import { Course } from '../../entities/Course';
 import { Module } from '../../entities/Module';
 import { Lesson } from '../../entities/Lesson';
+import { Request, Response, NextFunction } from 'express';
 
 // Mock the database connection
 jest.mock('../../config/database', () => ({
@@ -149,8 +149,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api', routes);
 
-// Error handler should be last
-app.use(errorHandler);
+// Fix errorHandler usage
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  errorHandler(err, req, res, next);
+});
 
 // Clear all mocks before each test
 beforeEach(() => {
@@ -169,16 +171,6 @@ describe('Lesson Controller Tests', () => {
         description: 'Test Description',
         isPublished: false,
         modules: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-    };
-
-    const mockModule: Module = {
-        id: '1',
-        title: 'Test Module',
-        description: 'Test Description',
-        order: 1,
-        course: mockCourse,
         lessons: [],
         createdAt: new Date(),
         updatedAt: new Date()
@@ -190,34 +182,16 @@ describe('Lesson Controller Tests', () => {
         description: 'Test Description',
         order: 1,
         prerequisites: [],
-        module: {
-            id: '1',
-            title: 'Test Module',
-            description: 'Test Description',
-            order: 1,
-            course: {
-                id: '1',
-                title: 'Test Course',
-                description: 'Test Description',
-                isPublished: false,
-                modules: [],
-                createdAt: new Date(),
-                updatedAt: new Date()
-            },
-            lessons: [],
-            createdAt: new Date(),
-            updatedAt: new Date()
-        },
+        module: {} as Module,
         capsules: [],
+        course: mockCourse,
+        progress: [],
         createdAt: new Date(),
         updatedAt: new Date()
     };
 
-    let lessonController: jest.Mocked<LessonController>;
-
     beforeEach(() => {
         jest.clearAllMocks();
-        lessonController = new LessonController() as jest.Mocked<LessonController>;
     });
 
     describe('POST /api/lessons', () => {
