@@ -8,6 +8,13 @@ const redis = createClient({
 // Connect to Redis
 redis.connect().catch(console.error);
 
+interface CacheableResponse {
+    [key: string]: unknown;
+    data?: unknown;
+    error?: string;
+    message?: string;
+}
+
 export const cacheMiddleware = (duration: number) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const key = `cache:${req.originalUrl}`;
@@ -21,7 +28,7 @@ export const cacheMiddleware = (duration: number) => {
 
       // Modify res.json method to cache the response
       const originalJson = res.json;
-      res.json = function(body: any) {
+      res.json = function(body: CacheableResponse) {
         redis.setEx(key, duration, JSON.stringify(body));
         return originalJson.call(this, body);
       };
