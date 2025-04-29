@@ -3,8 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { AppDataSource } from './config/database';
 import routes from './routes';
-
 import { errorHandler } from './middleware/errorHandler';
+import { Request, Response, NextFunction } from 'express';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -18,7 +18,9 @@ app.use(express.json());
 app.use('/api/v1/', routes);
 
 // Error handling
-app.use(errorHandler);
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    errorHandler(err, req, res, next);
+});
 
 // Database connection and server start
 AppDataSource.initialize()
