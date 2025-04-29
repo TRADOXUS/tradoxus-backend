@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Repository, FindOptionsWhere, ObjectLiteral, EntityTarget, DeepPartial } from 'typeorm';
+import { Repository, FindOptionsWhere, ObjectLiteral, EntityTarget, DeepPartial, FindOptionsOrder } from 'typeorm';
 import { validate } from 'class-validator';
 import { AppDataSource } from '../config/database';
 
@@ -41,7 +41,7 @@ export class BaseController<T extends BaseEntity> {
             const [items, total] = await this.repository.findAndCount({
                 skip,
                 take: limit,
-                order: { createdAt: 'DESC' } as any
+                order: { createdAt: 'DESC' } as FindOptionsOrder<T>
             });
 
             res.json({
