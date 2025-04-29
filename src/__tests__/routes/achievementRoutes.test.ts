@@ -1,7 +1,5 @@
-
 import request from 'supertest';
-import express from 'express';
-import { Router } from 'express';
+import express, { Express, Request, Response, Router } from 'express';
 import { AchievementController } from '../../controllers/AchievementController';
 import { asyncHandler } from '../../utils/asyncHandler';
 
@@ -9,9 +7,9 @@ jest.mock('../../controllers/AchievementController');
 jest.mock('../../utils/asyncHandler');
 
 describe('Achievement Routes', () => {
-  let mockAchievementController;
-  let app;
-  let router;
+  let mockAchievementController: jest.Mocked<AchievementController>;
+  let app: Express;
+  let router: Router;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -19,19 +17,41 @@ describe('Achievement Routes', () => {
     app = express();
     app.use(express.json());
 
-    mockAchievementController = new AchievementController();
+    mockAchievementController = new AchievementController() as jest.Mocked<AchievementController>;
 
-    mockAchievementController.findAll = jest.fn((req, res) => res.json([{ id: 1, name: 'Achievement 1' }]));
-    mockAchievementController.findOne = jest.fn((req, res) => res.json({ id: 1, name: 'Achievement 1' }));
-    mockAchievementController.findByModuleId = jest.fn((req, res) => res.json([{ id: 1, moduleId: req.params.moduleId }]));
-    mockAchievementController.getUserAchievements = jest.fn((req, res) => res.json([{ id: 1, userId: req.params.userId }]));
-    mockAchievementController.claimAchievement = jest.fn((req, res) => res.json({ success: true }));
-    mockAchievementController.getUserProgress = jest.fn((req, res) => res.json({ progress: 50 }));
-    mockAchievementController.updateProgress = jest.fn((req, res) => res.json({ success: true }));
-    mockAchievementController.getLeaderboard = jest.fn((req, res) => res.json([{ userId: 1, score: 100 }]));
-    mockAchievementController.getStatistics = jest.fn((req, res) => res.json({ totalAchievements: 10 }));
-    mockAchievementController.getCompletionRate = jest.fn((req, res) => res.json({ completionRate: 75 }));
-    mockAchievementController.getPopularAchievements = jest.fn((req, res) => res.json([{ id: 1, name: 'Popular Achievement' }]));
+    mockAchievementController.findAll = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json([{ id: 1, name: 'Achievement 1' }]);
+    });
+    mockAchievementController.findOne = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json({ id: 1, name: 'Achievement 1' });
+    });
+    mockAchievementController.findByModuleId = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<Response> => {
+      return res.json([{ id: 1, moduleId: req.params.moduleId }]);
+    });
+    mockAchievementController.getUserAchievements = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json([{ id: 1, userId: req.params.userId }]);
+    });
+    mockAchievementController.claimAchievement = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json({ success: true });
+    });
+    mockAchievementController.getUserProgress = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json({ progress: 50 });
+    });
+    mockAchievementController.updateProgress = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<Response> => {
+      return res.json({ success: true });
+    });
+    mockAchievementController.getLeaderboard = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json([{ userId: 1, score: 100 }]);
+    });
+    mockAchievementController.getStatistics = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json({ totalAchievements: 10 });
+    });
+    mockAchievementController.getCompletionRate = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json({ completionRate: 75 });
+    });
+    mockAchievementController.getPopularAchievements = jest.fn().mockImplementation(async (req: Request, res: Response): Promise<void> => {
+      void res.json([{ id: 1, name: 'Popular Achievement' }]);
+    });
 
     (asyncHandler as jest.Mock).mockImplementation((fn) => fn);
     (AchievementController as jest.Mock).mockImplementation(() => mockAchievementController);
@@ -39,11 +59,15 @@ describe('Achievement Routes', () => {
     router = Router();
     router.get('/', asyncHandler((req, res) => mockAchievementController.findAll(req, res)));
     router.get('/:id', asyncHandler((req, res) => mockAchievementController.findOne(req, res)));
-    router.get('/module/:moduleId', asyncHandler((req, res) => mockAchievementController.findByModuleId(req, res)));
+    router.get('/module/:moduleId', asyncHandler(async (req, res) => {
+      await mockAchievementController.findByModuleId(req, res);
+    }));
     router.get('/users/:userId/achievements', asyncHandler((req, res) => mockAchievementController.getUserAchievements(req, res)));
     router.post('/users/:userId/achievements/:achievementId/claim', asyncHandler((req, res) => mockAchievementController.claimAchievement(req, res)));
     router.get('/users/:userId/achievements/progress', asyncHandler((req, res) => mockAchievementController.getUserProgress(req, res)));
-    router.post('/progress/update', asyncHandler((req, res) => mockAchievementController.updateProgress(req, res)));
+    router.post('/progress/update', asyncHandler(async (req, res) => {
+      await mockAchievementController.updateProgress(req, res);
+    }));
     router.get('/leaderboard', asyncHandler((req, res) => mockAchievementController.getLeaderboard(req, res)));
     router.get('/statistics', asyncHandler((req, res) => mockAchievementController.getStatistics(req, res)));
     router.get('/analytics/completion-rate', asyncHandler((req, res) => mockAchievementController.getCompletionRate(req, res)));
