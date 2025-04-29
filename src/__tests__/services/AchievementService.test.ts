@@ -31,8 +31,9 @@ describe("AchievementService", () => {
 
         (AppDataSource.getRepository as jest.Mock)
             .mockImplementation((entity) => {
-                if (entity === Achievement) return mockAchievementRepo;
-                if (entity === UserAchievement) return mockUserAchievementRepo;
+                if (entity.name === 'Achievement') return mockAchievementRepo;
+                if (entity.name === 'UserAchievement') return mockUserAchievementRepo;
+                return {};
             });
 
         achievementService = new AchievementService();
