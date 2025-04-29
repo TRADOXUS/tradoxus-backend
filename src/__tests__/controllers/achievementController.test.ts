@@ -1,11 +1,13 @@
 import request from 'supertest';
-import { Achievement, AchievementType, AchievementCategory } from '../../entities/Achievement';
+import express from 'express';
+import { describe, expect, beforeEach, jest } from '@jest/globals';
+import { errorHandler } from '../../middleware/errorHandler';
+import { AchievementType, AchievementCategory } from '../../entities/Achievement';
 import { AchievementController } from '../../controllers/AchievementController';
 import { AchievementService } from '../../services/AchievementService';
 import { AppError } from '../../middleware/errorHandler';
-import express from 'express';
 import { asyncHandler } from '../../utils/asyncHandler';
-import { errorHandler } from '../../middleware/errorHandler';
+import { Request, Response, NextFunction } from 'express';
 
 jest.mock('../../services/AchievementService');
 
@@ -19,7 +21,9 @@ app.get('/', (req, res) => controller.findAll(req, res));
 app.get('/:id', asyncHandler((req, res) => controller.findOne(req, res)));
 app.get("/module/:moduleId", asyncHandler(controller.findByModuleId.bind(controller)));
 app.get('/user-achievements/:userId', asyncHandler((req, res) => controller.getUserAchievements(req, res)));
-app.use(errorHandler);
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  errorHandler(err, req, res, next);
+});
 
 // Test cases
 describe('AchievementController', () => {
@@ -32,12 +36,23 @@ describe('AchievementController', () => {
                 id: '1',
                 name: 'Test Achievement',
                 description: 'This is a test achievement',
-                type: AchievementType.SPECIAL, // Replace with a valid enum value
-                category: AchievementCategory.STREAK, // Replace with a valid enum value
+                type: AchievementType.SPECIAL,
+                category: AchievementCategory.STREAK,
                 points: 100,
                 icon: 'test-icon.png',
-                criteria: [], // Assuming an empty array for simplicity
-                rewards: [], // Assuming an empty array for simplicity
+                criteria: [],
+                rewards: [],
+                metadata: {
+                    moduleId: 'test-module',
+                    completionDetails: {
+                        score: 100,
+                        timeSpent: 3600,
+                        attempts: 1,
+                        perfectScore: true,
+                        streakDays: 7
+                    },
+                    attempts: 1
+                }
             }
         ],
         total: 1,});
@@ -57,12 +72,23 @@ describe('AchievementController', () => {
             id: '123',
             name: 'Module Achievement',
             description: 'Awarded for first achievement',
-            type: AchievementType.SPECIAL, // Replace with a valid enum value
+            type: AchievementType.SPECIAL,
             category: AchievementCategory.STREAK,
             points: 50,
             icon: 'first-win.png',
-            criteria: [], // Assuming an empty array for simplicity
+            criteria: [],
             rewards: [],
+            metadata: {
+                moduleId: 'module-123',
+                completionDetails: {
+                    score: 90,
+                    timeSpent: 1800,
+                    attempts: 2,
+                    perfectScore: false,
+                    streakDays: 5
+                },
+                attempts: 2
+            }
         }]);
         const response = await request(app).get('/module/123');
         expect(response.status).toBe(200);
@@ -73,21 +99,33 @@ describe('AchievementController', () => {
         mockService.getUserAchievements.mockResolvedValue([{
             id: '1',
             userId: 'user123',
-            earnedAt: new Date(), // Mock date when the achievement was earned
-            progress: 100, // Example progress value
-            status: 'completed', // Adjust based on actual enum/type
+            earnedAt: new Date(),
+            progress: 100,
+            status: 'completed',
             metadata: {},
             achievement: {
                 id: 'achv1',
                 name: 'First Win',
                 description: 'Awarded for first achievement',
-                type: AchievementType.SPECIAL, // Replace with a valid enum value
+                type: AchievementType.SPECIAL,
                 category: AchievementCategory.STREAK,
                 points: 50,
                 icon: 'first-win.png',
-                criteria: [], // Assuming an empty array for simplicity
+                criteria: [],
                 rewards: [],
-            },}]);
+                metadata: {
+                    moduleId: 'module-achv1',
+                    completionDetails: {
+                        score: 95,
+                        timeSpent: 2700,
+                        attempts: 1,
+                        perfectScore: true,
+                        streakDays: 10
+                    },
+                    attempts: 1
+                }
+            }
+        }]);
            
         const response = await request(app).get('/user-achievements/user123');
         expect(response.status).toBe(200);
@@ -97,19 +135,14 @@ describe('AchievementController', () => {
      
     test('should handle errors gracefully', async () => {
         mockService.findOne.mockImplementation(() => {
-          throw new AppError('Failed to fetch achievement', 500);
+          throw new AppError(500, 'Failed to fetch achievement');
         });
     
         const response = await request(app).get('/999');
         expect(response.status).toBe(500);
         expect(response.body).toEqual({ 
             status: 'error',
-            error: {  // Update this part to match the response
-                message: 'Failed to fetch achievement'
-            }
+            message: 'Failed to fetch achievement'
         });
-      }, 7000); // Increase timeout if needed
-    
-
-
+    }, 7000);
 });
