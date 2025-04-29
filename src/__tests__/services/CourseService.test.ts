@@ -1,6 +1,4 @@
 import { CourseService } from '../../services/CourseService';
-import { Course } from '../../entities/Course';
-import { Module } from '../../entities/Module';
 import { AppDataSource } from '../../config/database';
 
 // Mock the database connection and repositories
