@@ -20,7 +20,7 @@ interface Config {
 }
 
 const config: Config = {
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: parseInt(process.env.PORT || '4001', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   jwtSecret: process.env.JWT_SECRET || 'default_secret_do_not_use_in_production',
   jwtExpiration: process.env.JWT_EXPIRATION || '24h',
