@@ -1,4 +1,4 @@
-import { Repository, DeepPartial, FindOptionsWhere, ObjectLiteral } from "typeorm";
+import { Repository, DeepPartial, FindOptionsWhere, ObjectLiteral, UpdateResult } from "typeorm";
 import { AppDataSource } from "../config/database";
 
 export abstract class BaseService<T extends ObjectLiteral> {
@@ -12,7 +12,6 @@ export abstract class BaseService<T extends ObjectLiteral> {
         const [items, total] = await this.repository.findAndCount({
             skip: (page - 1) * limit,
             take: limit,
-            order: { createdAt: 'DESC' } as any
         });
         return { items, total };
     }
@@ -27,7 +26,11 @@ export abstract class BaseService<T extends ObjectLiteral> {
     }
 
     async update(id: string, data: DeepPartial<T>): Promise<T | null> {
-        await this.repository.update(id, data as any);
+        const criteria = { id } as unknown as FindOptionsWhere<T>;
+        const result: UpdateResult = await this.repository.update(criteria, data as T);
+        if (result.affected === 0) {
+            return null;
+        }
         return this.findOne(id);
     }
 
@@ -35,9 +38,10 @@ export abstract class BaseService<T extends ObjectLiteral> {
         const result = await this.repository.softDelete(id);
         return result.affected ? true : false;
     }
-     protected createError(message: string, statusCode: number) {
-    const error: any = new Error(message);
-    error.statusCode = statusCode;
-    throw error;
-  }
+
+    protected createError(message: string, statusCode: number) {
+        const error = new Error(message) as Error & { statusCode: number };
+        error.statusCode = statusCode;
+        throw error;
+    }
 } 
