@@ -1,33 +1,36 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { LessonProgress } from './LessonProgress';
+import { IsEmail, IsOptional } from 'class-validator';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  @IsOptional()
+  @IsEmail()
   email: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   passwordHash: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   firstName?: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   lastName?: string;
 
-  @Column({ length: 50, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
   nickname: string | null;
 
-  @Column({ length: 42, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 42, unique: true, nullable: true })
   walletAddress: string | null;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   isAdmin: boolean;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
   @OneToMany(() => LessonProgress, progress => progress.userId)
@@ -39,6 +42,6 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date;
 }

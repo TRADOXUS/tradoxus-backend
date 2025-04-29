@@ -1,0 +1,50 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=tradoxus
+      - REDIS_HOST=redis
+      - REDIS_PORT=6381
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - network
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5434:5434"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=tradoxus
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6381:6381"
+    volumes:
+      - redis-data:/data
+    networks:
+      - network
+    command: redis-server --appendonly yes --protected-mode no --port 6381
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  network:
+    driver: bridge 
