@@ -3,15 +3,6 @@ import { extractTokenFromHeader, verifyToken } from '../utils/jwtUtils';
 import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 
-// Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-    }
-  }
-}
-
 /**
  * Middleware to authenticate requests using JWT
  */
