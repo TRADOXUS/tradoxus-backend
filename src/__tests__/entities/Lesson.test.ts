@@ -1,7 +1,6 @@
 import { Lesson } from '../../entities/Lesson';
 import { validate } from 'class-validator';
 import { Module } from '../../entities/Module';
-import { Capsule } from '../../entities/Capsule';
 
 describe('Lesson Entity', () => {
     let lesson: Lesson;
