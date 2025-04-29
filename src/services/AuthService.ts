@@ -7,6 +7,7 @@ import { generateSignMessage, verifySignature, toChecksumAddress } from '../util
 import { generateToken } from '../utils/jwtUtils';
 import { BaseService } from './BaseService';
 import crypto from 'crypto';
+import { CustomError } from '../types/errors';
 
 export class AuthService extends BaseService<User> {
   constructor(
@@ -20,7 +21,7 @@ export class AuthService extends BaseService<User> {
   private readonly NONCE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
   
   protected createError(message: string, statusCode: number) {
-    const error: any = new Error(message);
+    const error = new Error(message) as CustomError;
     error.statusCode = statusCode;
     throw error;
   }
