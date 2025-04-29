@@ -10,7 +10,7 @@ export class User {
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   @IsOptional()
   @IsEmail()
-  email: string;
+  email: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   passwordHash: string;
