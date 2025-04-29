@@ -2,12 +2,13 @@ import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { UpdateUserDto, UserProfileDto } from '../dto/UserDto';
 import { BaseService } from './BaseService';
+import { CustomError } from '../types/errors';
 
 export class UserService extends BaseService <User> {
   private userRepository = AppDataSource.getRepository(User);
   
   protected createError(message: string, statusCode: number) {
-    const error: any = new Error(message);
+    const error = new Error(message) as CustomError;
     error.statusCode = statusCode;
     throw error;
   }
@@ -26,11 +27,11 @@ export class UserService extends BaseService <User> {
     
     return {
       id: user.id,
-      nickname: user.nickname,
-      walletAddress: user.walletAddress,
+      nickname: user.nickname || '',
+      walletAddress: user.walletAddress || '',
       email: user.email,
       createdAt: user.createdAt,
-      lastLogin: user.lastLogin
+      lastLogin: user.lastLoginAt
     };
   }
   
@@ -69,11 +70,11 @@ export class UserService extends BaseService <User> {
     
     return {
       id: updatedUser.id,
-      nickname: updatedUser.nickname,
-      walletAddress: updatedUser.walletAddress,
+      nickname: updatedUser.nickname || '',
+      walletAddress: updatedUser.walletAddress || '',
       email: updatedUser.email,
       createdAt: updatedUser.createdAt,
-      lastLogin: updatedUser.lastLogin
+      lastLogin: updatedUser.lastLoginAt
     };
   }
   
