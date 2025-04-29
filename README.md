@@ -26,51 +26,97 @@ This repository contains the backend services that handle the core functionality
 
 ### Prerequisites
 
-- Node.js (v16+)
-- PostgreSQL (v13+)
-- Docker and Docker Compose (optional)
-- Stellar account (for blockchain integration)
+- Docker
+- Docker Compose
+- Node.js (for local development)
 
-### Installation
+### Environment Setup
 
-1. Clone the repository
+The application requires the following environment variables:
+
+- `NODE_ENV`: Environment (development/production)
+- `DB_HOST`: PostgreSQL host
+- `DB_PORT`: PostgreSQL port
+- `DB_USERNAME`: PostgreSQL username
+- `DB_PASSWORD`: PostgreSQL password
+- `DB_NAME`: PostgreSQL database name
+- `REDIS_HOST`: Redis host
+- `REDIS_PORT`: Redis port
+
+These are already configured in the `docker-compose.yml` file.
+
+## Running with Docker Compose
+
+1. Clone the repository:
 ```bash
 git clone https://github.com/tradoxus/tradoxus-backend.git
 cd tradoxus-backend
 ```
 
-2. Install dependencies
+2. Build and start the containers:
+```bash
+docker compose up --build
+```
+
+This will start three services:
+- Backend API (port 4001)
+- PostgreSQL database (port 5434)
+- Redis cache (port 6381)
+
+3. To run in detached mode:
+```bash
+docker compose up -d
+```
+
+4. To stop the services:
+```bash
+docker compose down
+```
+
+## Service Ports
+
+- Backend API: `http://localhost:4001`
+- PostgreSQL: `localhost:5434`
+- Redis: `localhost:6381`
+
+## Data Persistence
+
+The application uses Docker volumes to persist data:
+- PostgreSQL data is stored in the `postgres-data` volume
+- Redis data is stored in the `redis-data` volume
+
+## Development
+
+For local development without Docker:
+
+1. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Configure your environment
+2. Start the development server:
 ```bash
-cp .env.example .env
-# Edit .env with your database and Stellar network details
+npm run dev
 ```
 
-4. Run database migrations
+## Building the Docker Image
+
+To build the Docker image manually:
 ```bash
-npm run migration:run
+docker build -t traduxus-backend .
 ```
 
-5. Start the development server
+## Troubleshooting
+
+1. If you encounter port conflicts, modify the port mappings in `docker-compose.yml`
+2. To view logs:
 ```bash
-npm run start:dev
+docker-compose logs -f
 ```
-
-### Docker Setup
-
+3. To reset the database:
 ```bash
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f api
-
-# Stop all services
-docker-compose down
+docker-compose down -v
+docker-compose up --build
 ```
 
 ## 📚 Project Structure
