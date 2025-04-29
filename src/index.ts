@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import config from './config/config';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
+import { NextFunction, Request, Response } from 'express';
 
 import { AppDataSource } from './config/database';
 
@@ -36,7 +37,10 @@ app.use('/api', authenticate);
 app.use('/api/v1', routes); 
 
 // Error handling
-app.use(errorHandler);
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    errorHandler(err, req, res, next);
+});
+
 // Database connection and server start
 AppDataSource.initialize()
     .then(() => {
