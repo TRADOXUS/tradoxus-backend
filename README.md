@@ -126,12 +126,12 @@ docker build -t traduxus-backend .
 1. If you encounter port conflicts, modify the port mappings in `docker-compose.yml`
 2. To view logs:
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 3. To reset the database:
 ```bash
-docker-compose down -v
-docker-compose up --build
+docker compose down -v
+docker compose up --build
 ```
 
 ## 📚 Project Structure
