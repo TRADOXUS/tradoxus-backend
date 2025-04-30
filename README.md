@@ -50,7 +50,7 @@ These are already configured in the `docker-compose.yml` file.
 1. Clone the repository:
 ```bash
 git clone https://github.com/tradoxus/tradoxus-backend.git
-cd tradoxus-backend
+
 ```
 
 2. Build and start the containers:
@@ -58,10 +58,11 @@ cd tradoxus-backend
 docker compose up --build
 ```
 
-This will start three services:
+This will start four services:
 - Backend API (port 4001)
 - PostgreSQL database (port 5434)
 - Redis cache (port 6381)
+- pgAdmin (port 5050)
 
 3. To run in detached mode:
 ```bash
@@ -78,6 +79,20 @@ docker compose down
 - Backend API: `http://localhost:4001`
 - PostgreSQL: `localhost:5434`
 - Redis: `localhost:6381`
+- pgAdmin: `http://localhost:5050`
+
+### Accessing pgAdmin
+- Default login credentials:
+  - Email: `admin@admin.com`
+  - Password: `admin`
+- To connect to the PostgreSQL database:
+  1. Add a new server in pgAdmin
+  2. Use the following connection details:
+     - Host: `postgres`
+     - Port: `5432`
+     - Database: `tradoxus`
+     - Username: `postgres`
+     - Password: `postgres`
 
 ## Data Persistence
 
