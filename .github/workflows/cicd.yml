@@ -18,7 +18,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: tradoxus
         ports:
-          - 5434:5434
+          - 5435:5432
         options: --health-cmd "pg_isready -U postgres -d traduxus" --health-interval 5s --health-timeout 5s --health-retries 5
 
     steps:
@@ -49,11 +49,3 @@ jobs:
       - name: Compile TypeScript
         run: npm run build
 
-      - name: Build Docker Image
-        run: docker build -t tradoxus-backend .
-
-      - name: Run Docker Containers
-        run: docker compose up -d
-
-      - name: Stop and Remove Docker Containers
-        run: docker compose down
