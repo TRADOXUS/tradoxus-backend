@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
-import { UserService } from '../services/UserService';
-import { UpdateUserDto } from '../dto/UserDto';
-import { BaseController } from './BaseController';
-import { validate, ValidationError } from 'class-validator';
-import { User } from '../entities/User';
+import { Request, Response } from "express";
+import { UserService } from "../services/UserService";
+import { UpdateUserDto } from "../dto/UserDto";
+import { BaseController } from "./BaseController";
+import { validate, ValidationError } from "class-validator";
+import { User } from "../entities/User";
 
 export class UserController extends BaseController<User> {
   private userService = new UserService(User);
@@ -20,7 +20,7 @@ export class UserController extends BaseController<User> {
       };
     });
     res.status(400).json({
-      error: 'Validation failed',
+      error: "Validation failed",
       details: formattedErrors,
     });
   }
@@ -29,7 +29,7 @@ export class UserController extends BaseController<User> {
   handleError(error: Error, res: Response) {
     console.error(error); // For debugging purposes, you can log the error
     res.status(500).json({
-      error: 'Internal Server Error',
+      error: "Internal Server Error",
       message: error.message,
     });
   }
@@ -37,7 +37,7 @@ export class UserController extends BaseController<User> {
   getCurrentUser = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.user || !req.user.id) {
-        res.status(401).json({ message: 'User not authenticated' });
+        res.status(401).json({ message: "User not authenticated" });
         return;
       }
 
@@ -55,7 +55,7 @@ export class UserController extends BaseController<User> {
   updateProfile = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.user || !req.user.id) {
-        res.status(401).json({ message: 'User not authenticated' });
+        res.status(401).json({ message: "User not authenticated" });
         return;
       }
 
@@ -69,7 +69,10 @@ export class UserController extends BaseController<User> {
         return;
       }
 
-      const updatedProfile = await this.userService.updateUserProfile(req.user.id, updateDto);
+      const updatedProfile = await this.userService.updateUserProfile(
+        req.user.id,
+        updateDto,
+      );
       res.status(200).json(updatedProfile);
     } catch (error) {
       this.handleError(error, res);
@@ -83,7 +86,7 @@ export class UserController extends BaseController<User> {
   deactivateAccount = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.user || !req.user.id) {
-        res.status(401).json({ message: 'User not authenticated' });
+        res.status(401).json({ message: "User not authenticated" });
         return;
       }
 

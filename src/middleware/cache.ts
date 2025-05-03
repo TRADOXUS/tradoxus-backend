@@ -1,18 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
-import { createClient } from 'redis';
+import { Request, Response, NextFunction } from "express";
+import { createClient } from "redis";
 
 const redis = createClient({
-  url: process.env.REDIS_URL
+  url: process.env.REDIS_URL,
 });
 
 // Connect to Redis
 redis.connect().catch(console.error);
 
 interface CacheableResponse {
-    [key: string]: unknown;
-    data?: unknown;
-    error?: string;
-    message?: string;
+  [key: string]: unknown;
+  data?: unknown;
+  error?: string;
+  message?: string;
 }
 
 export const cacheMiddleware = (duration: number) => {
@@ -21,21 +21,21 @@ export const cacheMiddleware = (duration: number) => {
 
     try {
       const cachedResponse = await redis.get(key);
-      
+
       if (cachedResponse) {
         return res.json(JSON.parse(cachedResponse));
       }
 
       // Modify res.json method to cache the response
       const originalJson = res.json;
-      res.json = function(body: CacheableResponse) {
+      res.json = function (body: CacheableResponse) {
         redis.setEx(key, duration, JSON.stringify(body));
         return originalJson.call(this, body);
       };
 
       return next();
     } catch (error) {
-      console.error('Cache error:', error);
+      console.error("Cache error:", error);
       return next();
     }
   };
@@ -46,4 +46,4 @@ export const clearCache = async (pattern: string) => {
   if (keys.length > 0) {
     await redis.del(keys);
   }
-}; 
+};

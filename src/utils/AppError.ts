@@ -6,8 +6,8 @@ export class AppError extends Error {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
-    
+
     // Captura la pila de llamadas
     Error.captureStackTrace(this, this.constructor);
   }
-} 
+}

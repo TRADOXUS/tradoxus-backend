@@ -24,13 +24,6 @@
     "baseUrl": ".",
     "types": ["jest", "node"]
   },
-  "exclude": [
-    "node_modules",
-    "**/__tests__",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ],
-  "include": [
-    "./src/**/*.ts"
-  ]
+  "exclude": ["node_modules", "**/__tests__", "**/*.test.ts", "**/*.spec.ts"],
+  "include": ["./src/**/*.ts"]
 }

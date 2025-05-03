@@ -1,13 +1,17 @@
-import { LessonProgressService } from '../../services/LessonProgressService';
-import { LessonProgress } from '../../entities/LessonProgress';
-import { Lesson } from '../../entities/Lesson';
-import { Course } from '../../entities/Course';
-import { ProgressStatus } from '../../types/progress';
-import { StartLessonProgressDto, UpdateLessonProgressDto, CompleteLessonProgressDto } from '../../dto/LessonProgress.dto';
-import { Repository } from 'typeorm';
+import { LessonProgressService } from "../../services/LessonProgressService";
+import { LessonProgress } from "../../entities/LessonProgress";
+import { Lesson } from "../../entities/Lesson";
+import { Course } from "../../entities/Course";
+import { ProgressStatus } from "../../types/progress";
+import {
+  StartLessonProgressDto,
+  UpdateLessonProgressDto,
+  CompleteLessonProgressDto,
+} from "../../dto/LessonProgress.dto";
+import { Repository } from "typeorm";
 
 // Mock de los repositorios
-jest.mock('typeorm', () => ({
+jest.mock("typeorm", () => ({
   Repository: jest.fn().mockImplementation(() => ({
     findOne: jest.fn(),
     find: jest.fn(),
@@ -25,7 +29,7 @@ jest.mock('typeorm', () => ({
   DeleteDateColumn: jest.fn(),
 }));
 
-describe('LessonProgressService', () => {
+describe("LessonProgressService", () => {
   let service: LessonProgressService;
   let mockLesson: Partial<Lesson>;
   let mockCourse: Partial<Course>;
@@ -33,28 +37,31 @@ describe('LessonProgressService', () => {
 
   beforeEach(() => {
     // Create repository mocks
-    const lessonProgressRepository = new Repository<LessonProgress>(LessonProgress, null as any);
+    const lessonProgressRepository = new Repository<LessonProgress>(
+      LessonProgress,
+      null as any,
+    );
     const lessonRepository = new Repository<Lesson>(Lesson, null as any);
 
     // Initialize service
     service = new LessonProgressService(
       lessonProgressRepository,
-      lessonRepository
+      lessonRepository,
     );
 
     // Create mocks
     mockCourse = {
-      id: 'course-1',
-      title: 'Test Course',
-      description: 'Test Description',
+      id: "course-1",
+      title: "Test Course",
+      description: "Test Description",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     mockLesson = {
-      id: 'lesson-1',
-      title: 'Test Lesson',
-      description: 'Test Description',
+      id: "lesson-1",
+      title: "Test Lesson",
+      description: "Test Description",
       course: mockCourse as Course,
       order: 1,
       createdAt: new Date(),
@@ -62,8 +69,8 @@ describe('LessonProgressService', () => {
     };
 
     mockProgress = {
-      id: 'progress-1',
-      userId: 'user-1',
+      id: "progress-1",
+      userId: "user-1",
       lesson: mockLesson as Lesson,
       status: ProgressStatus.IN_PROGRESS,
       startedAt: new Date(),
@@ -81,20 +88,24 @@ describe('LessonProgressService', () => {
     };
   });
 
-  describe('startProgress', () => {
-    it('debería iniciar una lección correctamente', async () => {
+  describe("startProgress", () => {
+    it("debería iniciar una lección correctamente", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
-      const lessonRepository = service['lessonRepository'];
+      const lessonProgressRepository = service["lessonProgressRepository"];
+      const lessonRepository = service["lessonRepository"];
 
       (lessonRepository.findOne as jest.Mock).mockResolvedValue(mockLesson);
       (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(null);
-      (lessonProgressRepository.create as jest.Mock).mockReturnValue(mockProgress);
-      (lessonProgressRepository.save as jest.Mock).mockResolvedValue(mockProgress);
+      (lessonProgressRepository.create as jest.Mock).mockReturnValue(
+        mockProgress,
+      );
+      (lessonProgressRepository.save as jest.Mock).mockResolvedValue(
+        mockProgress,
+      );
 
       // Ejecutar
-      const dto: StartLessonProgressDto = { lessonId: 'lesson-1' };
-      const result = await service.startProgress('user-1', dto);
+      const dto: StartLessonProgressDto = { lessonId: "lesson-1" };
+      const result = await service.startProgress("user-1", dto);
 
       // Verificar
       expect(result).toBeDefined();
@@ -103,22 +114,24 @@ describe('LessonProgressService', () => {
       expect(lessonProgressRepository.save).toHaveBeenCalled();
     });
 
-    it('debería lanzar un error si la lección no existe', async () => {
+    it("debería lanzar un error si la lección no existe", async () => {
       // Configurar mocks
-      const lessonRepository = service['lessonRepository'];
+      const lessonRepository = service["lessonRepository"];
       (lessonRepository.findOne as jest.Mock).mockResolvedValue(null);
 
       // Ejecutar y verificar
-      const dto: StartLessonProgressDto = { lessonId: 'lesson-1' };
-      await expect(service.startProgress('user-1', dto)).rejects.toThrow();
+      const dto: StartLessonProgressDto = { lessonId: "lesson-1" };
+      await expect(service.startProgress("user-1", dto)).rejects.toThrow();
     });
   });
 
-  describe('completeProgress', () => {
-    it('debería completar una lección correctamente', async () => {
+  describe("completeProgress", () => {
+    it("debería completar una lección correctamente", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
-      (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(mockProgress);
+      const lessonProgressRepository = service["lessonProgressRepository"];
+      (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(
+        mockProgress,
+      );
       (lessonProgressRepository.save as jest.Mock).mockResolvedValue({
         ...mockProgress,
         status: ProgressStatus.COMPLETED,
@@ -127,8 +140,11 @@ describe('LessonProgressService', () => {
       });
 
       // Ejecutar
-      const dto: CompleteLessonProgressDto = { lessonId: 'lesson-1', finalTimeSpent: 3600 };
-      const result = await service.completeProgress('user-1', dto);
+      const dto: CompleteLessonProgressDto = {
+        lessonId: "lesson-1",
+        finalTimeSpent: 3600,
+      };
+      const result = await service.completeProgress("user-1", dto);
 
       // Verificar
       expect(result).toBeDefined();
@@ -138,22 +154,27 @@ describe('LessonProgressService', () => {
       expect(lessonProgressRepository.save).toHaveBeenCalled();
     });
 
-    it('debería lanzar un error si el progreso no existe', async () => {
+    it("debería lanzar un error si el progreso no existe", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
+      const lessonProgressRepository = service["lessonProgressRepository"];
       (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(null);
 
       // Ejecutar y verificar
-      const dto: CompleteLessonProgressDto = { lessonId: 'lesson-1', finalTimeSpent: 3600 };
-      await expect(service.completeProgress('user-1', dto)).rejects.toThrow();
+      const dto: CompleteLessonProgressDto = {
+        lessonId: "lesson-1",
+        finalTimeSpent: 3600,
+      };
+      await expect(service.completeProgress("user-1", dto)).rejects.toThrow();
     });
   });
 
-  describe('updateProgress', () => {
-    it('debería actualizar el progreso correctamente', async () => {
+  describe("updateProgress", () => {
+    it("debería actualizar el progreso correctamente", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
-      (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(mockProgress);
+      const lessonProgressRepository = service["lessonProgressRepository"];
+      (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(
+        mockProgress,
+      );
       (lessonProgressRepository.save as jest.Mock).mockResolvedValue({
         ...mockProgress,
         completionPercentage: 50,
@@ -161,12 +182,12 @@ describe('LessonProgressService', () => {
       });
 
       // Ejecutar
-      const dto: UpdateLessonProgressDto = { 
-        lessonId: 'lesson-1', 
-        completionPercentage: 50, 
-        timeSpent: 300 
+      const dto: UpdateLessonProgressDto = {
+        lessonId: "lesson-1",
+        completionPercentage: 50,
+        timeSpent: 300,
       };
-      const result = await service.updateProgress('user-1', dto);
+      const result = await service.updateProgress("user-1", dto);
 
       // Verificar
       expect(result).toBeDefined();
@@ -175,54 +196,60 @@ describe('LessonProgressService', () => {
       expect(lessonProgressRepository.save).toHaveBeenCalled();
     });
 
-    it('debería lanzar un error si el progreso no existe', async () => {
+    it("debería lanzar un error si el progreso no existe", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
+      const lessonProgressRepository = service["lessonProgressRepository"];
       (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(null);
 
       // Ejecutar y verificar
-      const dto: UpdateLessonProgressDto = { 
-        lessonId: 'lesson-1', 
-        completionPercentage: 50, 
-        timeSpent: 300 
+      const dto: UpdateLessonProgressDto = {
+        lessonId: "lesson-1",
+        completionPercentage: 50,
+        timeSpent: 300,
       };
-      await expect(service.updateProgress('user-1', dto)).rejects.toThrow();
+      await expect(service.updateProgress("user-1", dto)).rejects.toThrow();
     });
   });
 
-  describe('getProgress', () => {
-    it('debería obtener el progreso correctamente', async () => {
+  describe("getProgress", () => {
+    it("debería obtener el progreso correctamente", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
-      (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(mockProgress);
+      const lessonProgressRepository = service["lessonProgressRepository"];
+      (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(
+        mockProgress,
+      );
 
       // Ejecutar
-      const result = await service.getProgress('user-1', 'lesson-1');
+      const result = await service.getProgress("user-1", "lesson-1");
 
       // Verificar
       expect(result).toBeDefined();
       expect(result.status).toBe(mockProgress.status);
-      expect(result.completionPercentage).toBe(mockProgress.completionPercentage);
+      expect(result.completionPercentage).toBe(
+        mockProgress.completionPercentage,
+      );
     });
 
-    it('debería lanzar un error si el progreso no existe', async () => {
+    it("debería lanzar un error si el progreso no existe", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
+      const lessonProgressRepository = service["lessonProgressRepository"];
       (lessonProgressRepository.findOne as jest.Mock).mockResolvedValue(null);
 
       // Ejecutar y verificar
-      await expect(service.getProgress('user-1', 'lesson-1')).rejects.toThrow();
+      await expect(service.getProgress("user-1", "lesson-1")).rejects.toThrow();
     });
   });
 
-  describe('getUserProgress', () => {
-    it('debería obtener el progreso del usuario correctamente', async () => {
+  describe("getUserProgress", () => {
+    it("debería obtener el progreso del usuario correctamente", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
-      (lessonProgressRepository.find as jest.Mock).mockResolvedValue([mockProgress]);
+      const lessonProgressRepository = service["lessonProgressRepository"];
+      (lessonProgressRepository.find as jest.Mock).mockResolvedValue([
+        mockProgress,
+      ]);
 
       // Ejecutar
-      const result = await service.getUserProgress('user-1');
+      const result = await service.getUserProgress("user-1");
 
       // Verificar
       expect(result).toBeDefined();
@@ -231,13 +258,13 @@ describe('LessonProgressService', () => {
       expect(result[0].status).toBe(mockProgress.status);
     });
 
-    it('debería devolver un array vacío si no hay progreso', async () => {
+    it("debería devolver un array vacío si no hay progreso", async () => {
       // Configurar mocks
-      const lessonProgressRepository = service['lessonProgressRepository'];
+      const lessonProgressRepository = service["lessonProgressRepository"];
       (lessonProgressRepository.find as jest.Mock).mockResolvedValue([]);
 
       // Ejecutar
-      const result = await service.getUserProgress('user-1');
+      const result = await service.getUserProgress("user-1");
 
       // Verificar
       expect(result).toBeDefined();
@@ -245,4 +272,4 @@ describe('LessonProgressService', () => {
       expect(result.length).toBe(0);
     });
   });
-}); 
+});

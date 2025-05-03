@@ -1,25 +1,29 @@
-import { Repository } from 'typeorm';
-import { User } from '../entities/User';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { RegisterDto, VerifyWalletDto } from '../dto/AuthDto';
-import { generateSignMessage, verifySignature, toChecksumAddress } from '../utils/walletUtils';
-import { generateToken } from '../utils/jwtUtils';
-import { BaseService } from './BaseService';
-import crypto from 'crypto';
-import { CustomError } from '../types/errors';
+import { Repository } from "typeorm";
+import { User } from "../entities/User";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { RegisterDto, VerifyWalletDto } from "../dto/AuthDto";
+import {
+  generateSignMessage,
+  verifySignature,
+  toChecksumAddress,
+} from "../utils/walletUtils";
+import { generateToken } from "../utils/jwtUtils";
+import { BaseService } from "./BaseService";
+import crypto from "crypto";
+import { CustomError } from "../types/errors";
 
 export class AuthService extends BaseService<User> {
-  constructor(
-    private userRepository: Repository<User>
-  ) {
+  constructor(private userRepository: Repository<User>) {
     super(User);
   }
 
   // Store temporary nonces for wallet verification
-  private nonceStore: { [address: string]: { nonce: string, timestamp: number } } = {};
+  private nonceStore: {
+    [address: string]: { nonce: string; timestamp: number };
+  } = {};
   private readonly NONCE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
-  
+
   protected createError(message: string, statusCode: number) {
     const error = new Error(message) as CustomError;
     error.statusCode = statusCode;
@@ -29,10 +33,17 @@ export class AuthService extends BaseService<User> {
   /**
    * Register a new user with email and password
    */
-  async register(email: string, password: string, firstName?: string, lastName?: string): Promise<User> {
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+  async register(
+    email: string,
+    password: string,
+    firstName?: string,
+    lastName?: string,
+  ): Promise<User> {
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
-      throw new Error('User already exists');
+      throw new Error("User already exists");
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -40,7 +51,7 @@ export class AuthService extends BaseService<User> {
       email,
       passwordHash,
       firstName,
-      lastName
+      lastName,
     });
 
     return this.userRepository.save(user);
@@ -55,24 +66,31 @@ export class AuthService extends BaseService<User> {
     const { nickname, walletAddress, signature } = registerDto;
 
     // Validate signature
-    const isSignatureValid = await this.verifyWalletOwnership(walletAddress, signature);
+    const isSignatureValid = await this.verifyWalletOwnership(
+      walletAddress,
+      signature,
+    );
     if (!isSignatureValid) {
-      throw this.createError('Invalid wallet signature', 400);
+      throw this.createError("Invalid wallet signature", 400);
     }
 
     // Convert to checksum address
     const checksumAddress = toChecksumAddress(walletAddress);
 
     // Check if wallet is already registered
-    const existingWallet = await this.userRepository.findOne({ where: { walletAddress: checksumAddress } });
+    const existingWallet = await this.userRepository.findOne({
+      where: { walletAddress: checksumAddress },
+    });
     if (existingWallet) {
-      throw this.createError('Wallet address is already registered', 409);
+      throw this.createError("Wallet address is already registered", 409);
     }
 
     // Check if nickname is taken
-    const existingNickname = await this.userRepository.findOne({ where: { nickname } });
+    const existingNickname = await this.userRepository.findOne({
+      where: { nickname },
+    });
     if (existingNickname) {
-      throw this.createError('Nickname is already taken', 409);
+      throw this.createError("Nickname is already taken", 409);
     }
 
     // Create new user
@@ -91,31 +109,32 @@ export class AuthService extends BaseService<User> {
         id: savedUser.id,
         nickname: savedUser.nickname,
         walletAddress: savedUser.walletAddress,
-        email: savedUser.email
+        email: savedUser.email,
       },
-      token
+      token,
     };
   }
 
   /**
    * Login with email and password
    */
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{ user: User; token: string }> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new Error("Invalid credentials");
     }
 
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
-      throw new Error('Invalid credentials');
+      throw new Error("Invalid credentials");
     }
 
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET!,
-      { expiresIn: '24h' }
-    );
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
+      expiresIn: "24h",
+    });
 
     user.lastLoginAt = new Date();
     await this.userRepository.save(user);
@@ -135,7 +154,7 @@ export class AuthService extends BaseService<User> {
 
     return {
       verified: isValid,
-      message: isValid ? 'Wallet verified successfully' : 'Invalid signature'
+      message: isValid ? "Wallet verified successfully" : "Invalid signature",
     };
   }
 
@@ -146,12 +165,12 @@ export class AuthService extends BaseService<User> {
    */
   generateNonce(walletAddress: string) {
     // Generate random nonce
-    const nonce = crypto.randomBytes(16).toString('hex');
+    const nonce = crypto.randomBytes(16).toString("hex");
 
     // Store nonce with timestamp
     this.nonceStore[walletAddress.toLowerCase()] = {
       nonce,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     const message = generateSignMessage(walletAddress, nonce);
@@ -165,13 +184,16 @@ export class AuthService extends BaseService<User> {
    * @param signature Signature to verify
    * @returns Boolean indicating if verification was successful
    */
-  private async verifyWalletOwnership(walletAddress: string, signature: string): Promise<boolean> {
+  private async verifyWalletOwnership(
+    walletAddress: string,
+    signature: string,
+  ): Promise<boolean> {
     const normalizedAddress = walletAddress.toLowerCase();
     const nonceData = this.nonceStore[normalizedAddress];
 
     // For testing purposes, if no nonce exists, assume it's valid
     if (!nonceData) {
-      console.warn('No nonce found for wallet. Using test mode verification.');
+      console.warn("No nonce found for wallet. Using test mode verification.");
       return true;
     }
 
@@ -197,21 +219,26 @@ export class AuthService extends BaseService<User> {
    */
   async loginWithWallet(walletAddress: string, signature: string) {
     // Verify wallet ownership
-    const isSignatureValid = await this.verifyWalletOwnership(walletAddress, signature);
+    const isSignatureValid = await this.verifyWalletOwnership(
+      walletAddress,
+      signature,
+    );
     if (!isSignatureValid) {
-      throw this.createError('Invalid wallet signature', 400);
+      throw this.createError("Invalid wallet signature", 400);
     }
 
     const checksumAddress = toChecksumAddress(walletAddress);
 
     // Find user by wallet address
-    const user = await this.userRepository.findOne({ where: { walletAddress: checksumAddress } });
+    const user = await this.userRepository.findOne({
+      where: { walletAddress: checksumAddress },
+    });
     if (!user) {
-      throw this.createError('User not found', 404);
+      throw this.createError("User not found", 404);
     }
 
     if (!user.isActive) {
-      throw this.createError('Account is inactive', 403);
+      throw this.createError("Account is inactive", 403);
     }
 
     // Update last login
@@ -226,9 +253,9 @@ export class AuthService extends BaseService<User> {
         id: user.id,
         nickname: user.nickname,
         walletAddress: user.walletAddress,
-        email: user.email
+        email: user.email,
       },
-      token
+      token,
     };
   }
 
@@ -237,16 +264,20 @@ export class AuthService extends BaseService<User> {
    */
   async validateToken(token: string): Promise<User> {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-      const user = await this.userRepository.findOne({ where: { id: decoded.userId } });
-      
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        userId: string;
+      };
+      const user = await this.userRepository.findOne({
+        where: { id: decoded.userId },
+      });
+
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
 
       return user;
     } catch (error) {
-      throw new Error('Invalid token');
+      throw new Error("Invalid token");
     }
   }
 }

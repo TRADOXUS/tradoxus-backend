@@ -1,10 +1,16 @@
-import { IsString, IsOptional, IsNumber, IsEnum, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+  IsArray,
+} from "class-validator";
 
 export enum CapsuleType {
-  VIDEO = 'video',
-  TEXT = 'text',
-  QUIZ = 'quiz',
-  ASSIGNMENT = 'assignment'
+  VIDEO = "video",
+  TEXT = "text",
+  QUIZ = "quiz",
+  ASSIGNMENT = "assignment",
 }
 
 export class CreateCapsuleDto {
@@ -56,4 +62,4 @@ export class UpdateCapsuleDto {
   @IsNumber({}, { each: true })
   @IsOptional()
   prerequisiteIds?: number[];
-} 
+}

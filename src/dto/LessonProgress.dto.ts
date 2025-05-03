@@ -1,5 +1,11 @@
-import { IsUUID, IsEnum, IsNumber, IsOptional, IsObject } from 'class-validator';
-import { ProgressStatus } from '../entities/LessonProgress';
+import {
+  IsUUID,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsObject,
+} from "class-validator";
+import { ProgressStatus } from "../entities/LessonProgress";
 
 export class StartLessonProgressDto {
   @IsUUID()
@@ -7,7 +13,13 @@ export class StartLessonProgressDto {
 }
 
 export interface InteractionEventData {
-  [key: string]: string | number | boolean | null | undefined | Record<string, unknown>;
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
+    | Record<string, unknown>;
 }
 
 export class UpdateLessonProgressDto {
@@ -46,4 +58,4 @@ export class CompleteLessonProgressDto {
   @IsNumber()
   @IsOptional()
   finalTimeSpent?: number;
-} 
+}

@@ -1,14 +1,14 @@
 {
-    "Servers": {
-        "1": {
-            "Name": "Tradoxus DB",
-            "Group": "Servers",
-            "Host": "postgres",
-            "Port": 5432,
-            "MaintenanceDB": "tradoxus",
-            "Username": "postgres",
-            "Password": "postgres",
-            "SSLMode": "prefer"
-        }
+  "Servers": {
+    "1": {
+      "Name": "Tradoxus DB",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "tradoxus",
+      "Username": "postgres",
+      "Password": "postgres",
+      "SSLMode": "prefer"
     }
-} 
+  }
+}

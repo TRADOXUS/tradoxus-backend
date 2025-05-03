@@ -1,10 +1,16 @@
 export enum ProgressStatus {
-  NOT_STARTED = 'NOT_STARTED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED'
+  NOT_STARTED = "NOT_STARTED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
 }
 
-export type MetadataValue = string | number | boolean | null | undefined | Record<string, string | number | boolean | null | undefined>;
+export type MetadataValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Record<string, string | number | boolean | null | undefined>;
 
 export interface InteractionEventMetadata {
   [key: string]: MetadataValue;
@@ -81,4 +87,4 @@ export interface BulkProgressStatus {
   lessonId: string;
   status: ProgressStatus;
   completionPercentage: number;
-} 
+}
