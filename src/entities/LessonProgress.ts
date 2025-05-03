@@ -1,16 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Lesson } from './Lesson';
-import { InteractionEventData } from '../dto/LessonProgress.dto';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { Lesson } from "./Lesson";
+import { InteractionEventData } from "../dto/LessonProgress.dto";
 
 export enum ProgressStatus {
-  NOT_STARTED = 'NOT_STARTED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED'
+  NOT_STARTED = "NOT_STARTED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
 }
 
 @Entity()
 export class LessonProgress {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
@@ -20,9 +27,9 @@ export class LessonProgress {
   lesson: Lesson;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: ProgressStatus,
-    default: ProgressStatus.NOT_STARTED
+    default: ProgressStatus.NOT_STARTED,
   })
   status: ProgressStatus;
 
@@ -35,16 +42,16 @@ export class LessonProgress {
   @Column({ default: 0 })
   timeSpent: number; // in seconds
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   lastInteractionAt: Date;
 
-  @Column({ type: 'float', default: 0 })
+  @Column({ type: "float", default: 0 })
   completionPercentage: number;
 
   @Column({ default: 0 })
   attempts: number;
 
-  @Column({ type: 'jsonb', default: {} })
+  @Column({ type: "jsonb", default: {} })
   metadata: {
     capsuleProgress: Record<string, boolean>;
     exerciseResults: Record<string, number>;
@@ -60,4 +67,4 @@ export class LessonProgress {
 
   @UpdateDateColumn()
   updatedAt: Date;
-} 
+}

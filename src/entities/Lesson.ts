@@ -1,57 +1,74 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, DeleteDateColumn } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  DeleteDateColumn,
+} from "typeorm";
 import { Module } from "./Module";
 import { Capsule } from "./Capsule";
-import { IsNotEmpty, IsString, Length, IsNumber, Min, IsArray, IsOptional } from "class-validator";
-import { Course } from './Course';
-import { LessonProgress } from './LessonProgress';
+import {
+  IsNotEmpty,
+  IsString,
+  Length,
+  IsNumber,
+  Min,
+  IsArray,
+  IsOptional,
+} from "class-validator";
+import { Course } from "./Course";
+import { LessonProgress } from "./LessonProgress";
 
-@Entity('lessons')
+@Entity("lessons")
 export class Lesson {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
 
-    @Column({ length: 100 })
-    @IsNotEmpty()
-    @IsString()
-    @Length(3, 100)
-    title!: string;
+  @Column({ length: 100 })
+  @IsNotEmpty()
+  @IsString()
+  @Length(3, 100)
+  title!: string;
 
-    @Column({ type: 'text', nullable: true })
-    description?: string;
+  @Column({ type: "text", nullable: true })
+  description?: string;
 
-    @Column({ type: 'int', default: 0 })
-    @IsNumber()
-    @Min(0)
-    order: number = 0;
+  @Column({ type: "int", default: 0 })
+  @IsNumber()
+  @Min(0)
+  order: number = 0;
 
-    @Column({ type: 'simple-array', nullable: true })
-    @IsOptional()
-    @IsArray()
-    prerequisites?: string[];
+  @Column({ type: "simple-array", nullable: true })
+  @IsOptional()
+  @IsArray()
+  prerequisites?: string[];
 
-    @ManyToOne(() => Module, (module: Module) => module.lessons, {
-        onDelete: 'CASCADE'
-    })
-    @IsNotEmpty()
-    module!: Module;
+  @ManyToOne(() => Module, (module: Module) => module.lessons, {
+    onDelete: "CASCADE",
+  })
+  @IsNotEmpty()
+  module!: Module;
 
-    @OneToMany(() => Capsule, (capsule: Capsule) => capsule.lesson, {
-        cascade: true
-    })
-    capsules!: Capsule[];
+  @OneToMany(() => Capsule, (capsule: Capsule) => capsule.lesson, {
+    cascade: true,
+  })
+  capsules!: Capsule[];
 
-    @ManyToOne(() => Course, course => course.lessons)
-    course: Course;
+  @ManyToOne(() => Course, (course) => course.lessons)
+  course: Course;
 
-    @OneToMany(() => LessonProgress, progress => progress.lesson)
-    progress: LessonProgress[];
+  @OneToMany(() => LessonProgress, (progress) => progress.lesson)
+  progress: LessonProgress[];
 
-    @CreateDateColumn()
-    createdAt!: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
 
-    @UpdateDateColumn()
-    updatedAt!: Date;
+  @UpdateDateColumn()
+  updatedAt!: Date;
 
-    @DeleteDateColumn()
-    deletedAt?: Date;
-} 
+  @DeleteDateColumn()
+  deletedAt?: Date;
+}

@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsNumber, IsArray, IsNotEmpty, Length, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsArray,
+  IsNotEmpty,
+  Length,
+  Min,
+} from "class-validator";
 
 export class CreateLessonDto {
   @IsString()
@@ -44,4 +52,4 @@ export class UpdateLessonDto {
   @IsString({ each: true })
   @IsOptional()
   prerequisites?: string[];
-} 
+}

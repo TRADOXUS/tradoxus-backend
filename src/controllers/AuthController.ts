@@ -1,10 +1,10 @@
-import { Request, Response } from 'express';
-import { AuthService } from '../services/AuthService';
-import { AppError } from '../middleware/errorHandler';
-import { RegisterDto, VerifyWalletDto } from '../dto/AuthDto';
-import { BaseController } from './BaseController';
-import { User } from '../entities/User';
-import { validate, ValidationError } from 'class-validator';
+import { Request, Response } from "express";
+import { AuthService } from "../services/AuthService";
+import { AppError } from "../middleware/errorHandler";
+import { RegisterDto, VerifyWalletDto } from "../dto/AuthDto";
+import { BaseController } from "./BaseController";
+import { User } from "../entities/User";
+import { validate, ValidationError } from "class-validator";
 
 export class AuthController extends BaseController<User> {
   constructor(private authService: AuthService) {
@@ -19,7 +19,7 @@ export class AuthController extends BaseController<User> {
       };
     });
     res.status(400).json({
-      error: 'Validation failed',
+      error: "Validation failed",
       details: formattedErrors,
     });
   }
@@ -28,7 +28,7 @@ export class AuthController extends BaseController<User> {
   handleError(error: Error, res: Response) {
     console.error(error); // For debugging purposes, you can log the error
     res.status(500).json({
-      error: 'Internal Server Error',
+      error: "Internal Server Error",
       message: error.message,
     });
   }
@@ -40,18 +40,23 @@ export class AuthController extends BaseController<User> {
   async register(req: Request, res: Response) {
     try {
       const { email, password, firstName, lastName } = req.body;
-      const user = await this.authService.register(email, password, firstName, lastName);
-      
+      const user = await this.authService.register(
+        email,
+        password,
+        firstName,
+        lastName,
+      );
+
       res.status(201).json({
-        status: 'success',
+        status: "success",
         data: {
           user: {
             id: user.id,
             email: user.email,
             firstName: user.firstName,
-            lastName: user.lastName
-          }
-        }
+            lastName: user.lastName,
+          },
+        },
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -92,18 +97,18 @@ export class AuthController extends BaseController<User> {
     try {
       const { email, password } = req.body;
       const { user, token } = await this.authService.login(email, password);
-      
+
       res.json({
-        status: 'success',
+        status: "success",
         data: {
           user: {
             id: user.id,
             email: user.email,
             firstName: user.firstName,
-            lastName: user.lastName
+            lastName: user.lastName,
           },
-          token
-        }
+          token,
+        },
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -122,7 +127,7 @@ export class AuthController extends BaseController<User> {
       const { walletAddress } = req.params;
 
       if (!walletAddress) {
-        res.status(400).json({ message: 'Wallet address is required' });
+        res.status(400).json({ message: "Wallet address is required" });
         return;
       }
 
@@ -165,11 +170,16 @@ export class AuthController extends BaseController<User> {
       const { walletAddress, signature } = req.body;
 
       if (!walletAddress || !signature) {
-        res.status(400).json({ message: 'Wallet address and signature are required' });
+        res
+          .status(400)
+          .json({ message: "Wallet address and signature are required" });
         return;
       }
 
-      const result = await this.authService.loginWithWallet(walletAddress, signature);
+      const result = await this.authService.loginWithWallet(
+        walletAddress,
+        signature,
+      );
       res.status(200).json(result);
     } catch (error) {
       this.handleError(error, res);

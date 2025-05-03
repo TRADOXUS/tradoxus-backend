@@ -1,18 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 
 // Enums for Achievement Type and Category
 enum AchievementType {
   BRONZE = "BRONZE",
   SILVER = "SILVER",
   GOLD = "GOLD",
-  SPECIAL = "SPECIAL"
+  SPECIAL = "SPECIAL",
 }
 
 enum AchievementCategory {
   MODULE_COMPLETION = "MODULE_COMPLETION",
   SPEED_LEARNING = "SPEED_LEARNING",
   PERFECT_SCORE = "PERFECT_SCORE",
-  STREAK = "STREAK"
+  STREAK = "STREAK",
 }
 
 @Entity()
@@ -101,5 +101,11 @@ interface Reward {
   value: string | number | boolean | Record<string, unknown>;
 }
 
-export { Achievement, UserAchievement, AchievementType, AchievementCategory, AchievementCriteria, Reward };
-
+export {
+  Achievement,
+  UserAchievement,
+  AchievementType,
+  AchievementCategory,
+  AchievementCriteria,
+  Reward,
+};

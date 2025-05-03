@@ -1,25 +1,34 @@
-import { Repository } from 'typeorm';
-import { LessonProgress, ProgressStatus } from '../entities/LessonProgress';
-import { StartLessonProgressDto, UpdateLessonProgressDto, CompleteLessonProgressDto } from '../dto/LessonProgress.dto';
-import { Lesson } from '../entities/Lesson';
+import { Repository } from "typeorm";
+import { LessonProgress, ProgressStatus } from "../entities/LessonProgress";
+import {
+  StartLessonProgressDto,
+  UpdateLessonProgressDto,
+  CompleteLessonProgressDto,
+} from "../dto/LessonProgress.dto";
+import { Lesson } from "../entities/Lesson";
 
 export class LessonProgressService {
   constructor(
     private lessonProgressRepository: Repository<LessonProgress>,
-    private lessonRepository: Repository<Lesson>
+    private lessonRepository: Repository<Lesson>,
   ) {}
 
-  async startProgress(userId: string, dto: StartLessonProgressDto): Promise<LessonProgress> {
-    const lesson = await this.lessonRepository.findOne({ where: { id: dto.lessonId } });
+  async startProgress(
+    userId: string,
+    dto: StartLessonProgressDto,
+  ): Promise<LessonProgress> {
+    const lesson = await this.lessonRepository.findOne({
+      where: { id: dto.lessonId },
+    });
     if (!lesson) {
-      throw new Error('Lesson not found');
+      throw new Error("Lesson not found");
     }
 
     let progress = await this.lessonProgressRepository.findOne({
       where: {
         userId,
-        lesson: { id: dto.lessonId }
-      }
+        lesson: { id: dto.lessonId },
+      },
     });
 
     if (!progress) {
@@ -28,7 +37,7 @@ export class LessonProgressService {
         lesson,
         status: ProgressStatus.IN_PROGRESS,
         startedAt: new Date(),
-        lastInteractionAt: new Date()
+        lastInteractionAt: new Date(),
       });
     } else if (progress.status === ProgressStatus.COMPLETED) {
       progress.status = ProgressStatus.IN_PROGRESS;
@@ -39,38 +48,46 @@ export class LessonProgressService {
     return this.lessonProgressRepository.save(progress);
   }
 
-  async updateProgress(userId: string, dto: UpdateLessonProgressDto): Promise<LessonProgress> {
+  async updateProgress(
+    userId: string,
+    dto: UpdateLessonProgressDto,
+  ): Promise<LessonProgress> {
     const progress = await this.lessonProgressRepository.findOne({
       where: {
         userId,
-        lesson: { id: dto.lessonId }
-      }
+        lesson: { id: dto.lessonId },
+      },
     });
 
     if (!progress) {
-      throw new Error('Progress not found');
+      throw new Error("Progress not found");
     }
 
     if (dto.status) progress.status = dto.status;
     if (dto.timeSpent) progress.timeSpent = dto.timeSpent;
-    if (dto.completionPercentage) progress.completionPercentage = dto.completionPercentage;
-    if (dto.metadata) progress.metadata = { ...progress.metadata, ...dto.metadata };
+    if (dto.completionPercentage)
+      progress.completionPercentage = dto.completionPercentage;
+    if (dto.metadata)
+      progress.metadata = { ...progress.metadata, ...dto.metadata };
 
     progress.lastInteractionAt = new Date();
 
     return this.lessonProgressRepository.save(progress);
   }
 
-  async completeProgress(userId: string, dto: CompleteLessonProgressDto): Promise<LessonProgress> {
+  async completeProgress(
+    userId: string,
+    dto: CompleteLessonProgressDto,
+  ): Promise<LessonProgress> {
     const progress = await this.lessonProgressRepository.findOne({
       where: {
         userId,
-        lesson: { id: dto.lessonId }
-      }
+        lesson: { id: dto.lessonId },
+      },
     });
 
     if (!progress) {
-      throw new Error('Progress not found');
+      throw new Error("Progress not found");
     }
 
     progress.status = ProgressStatus.COMPLETED;
@@ -85,12 +102,12 @@ export class LessonProgressService {
     const progress = await this.lessonProgressRepository.findOne({
       where: {
         userId,
-        lesson: { id: lessonId }
-      }
+        lesson: { id: lessonId },
+      },
     });
 
     if (!progress) {
-      throw new Error('Progress not found');
+      throw new Error("Progress not found");
     }
 
     return progress;
@@ -99,7 +116,7 @@ export class LessonProgressService {
   async getUserProgress(userId: string): Promise<LessonProgress[]> {
     return this.lessonProgressRepository.find({
       where: { userId },
-      relations: ['lesson']
+      relations: ["lesson"],
     });
   }
-} 
+}

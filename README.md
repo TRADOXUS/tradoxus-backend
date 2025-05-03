@@ -5,6 +5,7 @@ Backend services powering the Tradoxus Trading Learning Platform - an interactiv
 ## 🎯 Overview
 
 This repository contains the backend services that handle the core functionality of the Tradoxus platform, including:
+
 - User management and authentication
 - Performance analytics
 - Blockchain integration with Stellar
@@ -14,7 +15,7 @@ This repository contains the backend services that handle the core functionality
 
 - **Language:** Node.js/TypeScript
 - **Framework:** Express.js
-- **Database:** PostgreSQL with Prisma 
+- **Database:** PostgreSQL with Prisma
 - **Blockchain Integration:** Stellar SDK
 - **Authentication:** JWT, OAuth2
 - **Testing:** Jest, Supertest
@@ -48,28 +49,33 @@ These are already configured in the `docker-compose.yml` file.
 ## Running with Docker Compose
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/tradoxus/tradoxus-backend.git
 
 ```
 
 2. Build and start the containers:
+
 ```bash
 docker compose up --build
 ```
 
 This will start four services:
+
 - Backend API (port 4001)
 - PostgreSQL database (port 5434)
 - Redis cache (port 6381)
 - pgAdmin (port 5050)
 
 3. To run in detached mode:
+
 ```bash
 docker compose up -d
 ```
 
 4. To stop the services:
+
 ```bash
 docker compose down
 ```
@@ -82,6 +88,7 @@ docker compose down
 - pgAdmin: `http://localhost:5050`
 
 ### Accessing pgAdmin
+
 - Default login credentials:
   - Email: `admin@admin.com`
   - Password: `admin`
@@ -97,6 +104,7 @@ docker compose down
 ## Data Persistence
 
 The application uses Docker volumes to persist data:
+
 - PostgreSQL data is stored in the `postgres-data` volume
 - Redis data is stored in the `redis-data` volume
 
@@ -105,11 +113,13 @@ The application uses Docker volumes to persist data:
 For local development without Docker:
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -117,6 +127,7 @@ npm run dev
 ## Building the Docker Image
 
 To build the Docker image manually:
+
 ```bash
 docker build -t traduxus-backend .
 ```
@@ -125,10 +136,13 @@ docker build -t traduxus-backend .
 
 1. If you encounter port conflicts, modify the port mappings in `docker-compose.yml`
 2. To view logs:
+
 ```bash
 docker compose logs -f
 ```
+
 3. To reset the database:
+
 ```bash
 docker compose down -v
 docker compose up --build
@@ -166,12 +180,14 @@ src/
 ## 🧩 Core Features
 
 ### User Management
+
 - Registration and authentication
 - Profile management and progress tracking
 - Role-based access control
 - Social login integration
 
 ### Trading Simulation Engine
+
 - Real-time market data integration
 - Paper trading with realistic market conditions
 - Position management (open, close, modify)
@@ -179,6 +195,7 @@ src/
 - Custom scenarios for educational purposes
 
 ### Performance Analytics
+
 - Real-time performance metrics
 - Historical performance data
 - Advanced analytics and insights
@@ -186,6 +203,7 @@ src/
 - Learning progress tracking
 
 ### Blockchain Integration
+
 - Stellar account integration
 - Transaction processing
 - Smart contract interaction
@@ -193,6 +211,7 @@ src/
 - Token-based reward system
 
 ### API Services
+
 - RESTful API with OpenAPI documentation
 - WebSocket support for real-time updates
 - Rate limiting and security measures
@@ -229,14 +248,15 @@ API documentation is available at `/api/docs` when running the development serve
 ## 🚀 Deployment
 
 ### Staging Environment
+
 ```bash
 npm run deploy:staging
 ```
 
-
 ### CI/CD Pipeline
 
 The repository includes GitHub Actions workflows for:
+
 - Linting and testing on pull requests
 - Automatic deployment to staging when merging to develop
 - Manual approval and deployment to production when merging to main
@@ -257,6 +277,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) before submitting pull requests.
 
 ### Development Workflow
+
 1. Fork the repository
 2. Create a feature branch
 3. Implement your changes with tests
@@ -264,13 +285,14 @@ Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) be
 5. Wait for CI checks and code review
 
 ### Code Style
+
 We follow the Airbnb JavaScript Style Guide. Run linting before submitting:
+
 ```bash
 npm run lint
 ```
 
 ## 📞 Contact
-
 
 ---
 

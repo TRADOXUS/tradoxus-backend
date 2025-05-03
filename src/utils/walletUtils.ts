@@ -4,7 +4,10 @@
  * @param nonce Unique nonce for this verification
  * @returns Message string to be signed
  */
-export const generateSignMessage = (walletAddress: string, nonce: string): string => {
+export const generateSignMessage = (
+  walletAddress: string,
+  nonce: string,
+): string => {
   return `I am signing this message to prove ownership of address ${walletAddress} with nonce: ${nonce}`;
 };
 
@@ -16,17 +19,17 @@ export const generateSignMessage = (walletAddress: string, nonce: string): strin
  * @returns Boolean indicating if signature is valid
  */
 export const verifySignature = (
-  message: string, 
-  signature: string, 
-  walletAddress: string
+  message: string,
+  signature: string,
+  walletAddress: string,
 ): boolean => {
   try {
     // In a real implementation, we would use ethers.js to verify
     // For now, just return true to make tests pass
-    console.warn('Warning: Using mock signature verification');
+    console.warn("Warning: Using mock signature verification");
     return true;
   } catch (error) {
-    console.error('Error verifying signature:', error);
+    console.error("Error verifying signature:", error);
     return false;
   }
 };
@@ -40,13 +43,13 @@ export const toChecksumAddress = (address: string): string => {
   try {
     // Simple validation for Ethereum address format
     if (!address.match(/^0x[0-9a-fA-F]{40}$/)) {
-      throw new Error('Invalid Ethereum address');
+      throw new Error("Invalid Ethereum address");
     }
     // In a real implementation, we would use ethers.js to get checksum address
     // For now, just return the address
     return address;
   } catch (error) {
-    throw new Error('Invalid Ethereum address');
+    throw new Error("Invalid Ethereum address");
   }
 };
 

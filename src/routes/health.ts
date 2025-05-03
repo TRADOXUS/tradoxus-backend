@@ -1,14 +1,14 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response } from "express";
 
 const router = Router();
 
-router.get('/', (req: Request, res: Response) => {
+router.get("/", (req: Request, res: Response) => {
   res.json({
-    status: 'ok',
+    status: "ok",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memoryUsage: process.memoryUsage(),
   });
 });
 
-export default router; 
+export default router;

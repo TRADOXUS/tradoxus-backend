@@ -1,6 +1,5 @@
-import { User } from '../entities/User';
+import { User } from "../entities/User";
 // import config from '../config/config';
-
 
 interface TokenPayload {
   userId: string;
@@ -15,10 +14,10 @@ interface TokenPayload {
 export const generateToken = (user: User): string => {
   const payload: TokenPayload = {
     userId: user.id,
-    walletAddress: user.walletAddress || '',
+    walletAddress: user.walletAddress || "",
   };
 
-  const mockToken = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const mockToken = Buffer.from(JSON.stringify(payload)).toString("base64");
   return `mock.${mockToken}.signature`;
 };
 
@@ -29,12 +28,12 @@ export const generateToken = (user: User): string => {
  */
 export const verifyToken = (token: string): TokenPayload | null => {
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3 || parts[0] !== 'mock') {
+    const parts = token.split(".");
+    if (parts.length !== 3 || parts[0] !== "mock") {
       return null;
     }
-    
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+
+    const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
     return payload as TokenPayload;
   } catch (error) {
     return null;
@@ -47,9 +46,9 @@ export const verifyToken = (token: string): TokenPayload | null => {
  * @returns Token string or null if invalid format
  */
 export const extractTokenFromHeader = (authHeader: string): string | null => {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
-  
+
   return authHeader.substring(7);
 };
