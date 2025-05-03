@@ -48,4 +48,3 @@ jobs:
 
       - name: Compile TypeScript
         run: npm run build
-
