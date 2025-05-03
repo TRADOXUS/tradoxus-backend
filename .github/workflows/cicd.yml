@@ -35,7 +35,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18"
-          cache: "npm"
 
       - name: Check for package.json
         run: |
@@ -43,9 +42,6 @@ jobs:
             echo "Error: package.json not found"
             exit 1
           fi
-
-      - name: Generate package-lock.json
-        run: npm install --package-lock-only
 
       - name: Install dependencies
         run: npm install
