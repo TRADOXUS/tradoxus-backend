@@ -37,6 +37,16 @@ jobs:
           node-version: "18"
           cache: "npm"
 
+      - name: Check for package.json
+        run: |
+          if [ ! -f "package.json" ]; then
+            echo "Error: package.json not found"
+            exit 1
+          fi
+
+      - name: Generate package-lock.json
+        run: npm install --package-lock-only
+
       - name: Install dependencies
         run: npm install
 
