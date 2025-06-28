@@ -12,10 +12,15 @@ import { generateToken } from "../utils/jwtUtils";
 import { BaseService } from "./BaseService";
 import crypto from "crypto";
 import { CustomError } from "../types/errors";
+import { ReferralService } from "./ReferralService";
+import { ReferralStatus } from "../entities/Referral";
 
 export class AuthService extends BaseService<User> {
+  private referralService: ReferralService;
+
   constructor(private userRepository: Repository<User>) {
     super(User);
+    this.referralService = new ReferralService();
   }
 
   // Store temporary nonces for wallet verification
@@ -38,6 +43,7 @@ export class AuthService extends BaseService<User> {
     password: string,
     firstName?: string,
     lastName?: string,
+    referralCode?: string
   ): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: { email },
@@ -47,6 +53,7 @@ export class AuthService extends BaseService<User> {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
     const user = this.userRepository.create({
       email,
       passwordHash,
@@ -54,7 +61,58 @@ export class AuthService extends BaseService<User> {
       lastName,
     });
 
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    // Apply referral code if provided
+    if (referralCode) {
+      try {
+        await this.referralService.applyReferralCode(
+          savedUser.id,
+          referralCode
+        );
+      } catch (error) {
+        // Log error but don't fail registration
+        console.warn(`Failed to apply referral code: ${error.message}`);
+      }
+    }
+
+    return savedUser;
+  }
+
+  /**
+   * Complete user profile and trigger referral completion
+   */
+  async completeProfile(
+    userId: string,
+    profileData: Partial<User>
+  ): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Update user profile
+    Object.assign(user, profileData);
+    const updatedUser = await this.userRepository.save(user);
+
+    // Check and complete any pending referrals
+    try {
+      const referralStatus =
+        await this.referralService.getUserReferralStatus(userId);
+      if (
+        referralStatus.referralReceived &&
+        referralStatus.referralReceived.status === ReferralStatus.PENDING
+      ) {
+        await this.referralService.completeReferral(
+          referralStatus.referralReceived.id,
+          "profile_completed"
+        );
+      }
+    } catch (error) {
+      console.warn(`Failed to complete referral: ${error.message}`);
+    }
+
+    return updatedUser;
   }
 
   /**
@@ -68,7 +126,7 @@ export class AuthService extends BaseService<User> {
     // Validate signature
     const isSignatureValid = await this.verifyWalletOwnership(
       walletAddress,
-      signature,
+      signature
     );
     if (!isSignatureValid) {
       throw this.createError("Invalid wallet signature", 400);
@@ -120,7 +178,7 @@ export class AuthService extends BaseService<User> {
    */
   async login(
     email: string,
-    password: string,
+    password: string
   ): Promise<{ user: User; token: string }> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
@@ -186,7 +244,7 @@ export class AuthService extends BaseService<User> {
    */
   private async verifyWalletOwnership(
     walletAddress: string,
-    signature: string,
+    signature: string
   ): Promise<boolean> {
     const normalizedAddress = walletAddress.toLowerCase();
     const nonceData = this.nonceStore[normalizedAddress];
@@ -221,7 +279,7 @@ export class AuthService extends BaseService<User> {
     // Verify wallet ownership
     const isSignatureValid = await this.verifyWalletOwnership(
       walletAddress,
-      signature,
+      signature
     );
     if (!isSignatureValid) {
       throw this.createError("Invalid wallet signature", 400);
@@ -278,6 +336,28 @@ export class AuthService extends BaseService<User> {
       return user;
     } catch (error) {
       throw new Error("Invalid token");
+    }
+  }
+
+  /**
+   * Complete pending referrals for a user
+   */
+  async completePendingReferrals(userId: string): Promise<void> {
+    try {
+      const userReferral = await this.referralService
+        .getReferralRepository()
+        .findOne({
+          where: { referredUserId: userId, status: ReferralStatus.PENDING },
+        });
+
+      if (userReferral) {
+        await this.referralService.completeReferral(
+          userReferral.id,
+          "profile_completed"
+        );
+      }
+    } catch (error) {
+      console.error("Error completing pending referrals:", error);
     }
   }
 }
