@@ -261,7 +261,11 @@ export class ReferralService extends BaseService<ReferralCode> {
     completedReferrals: number;
     pendingReferrals: number;
     totalRewardsDistributed: number;
-    topReferrers: Array<{ userId: string; referralCount: number; user: User }>;
+    topReferrers: Array<{
+      userId: string;
+      referralCount: number;
+      user: User;
+    }>;
   }> {
     const totalReferrals = await this.referralRepo.count();
     const completedReferrals = await this.referralRepo.count({
@@ -294,17 +298,27 @@ export class ReferralService extends BaseService<ReferralCode> {
       .limit(10)
       .getRawMany();
 
-    const topReferrers = await Promise.all(
-      topReferrersQuery.map(async (item) => {
-        const user = await this.userRepo.findOne({
-          where: { id: item.userId },
-        });
-        return {
-          userId: item.userId,
-          referralCount: parseInt(item.referralCount),
-          user: user!,
-        };
-      })
+    const topReferrers = (
+      await Promise.all(
+        topReferrersQuery.map(async (item) => {
+          const user = await this.userRepo.findOne({
+            where: { id: item.userId },
+          });
+          if (!user) {
+            return null;
+          }
+          return {
+            userId: item.userId,
+            referralCount: parseInt(item.referralCount),
+            user: user,
+          };
+        })
+      )
+    ).filter(
+      (
+        result
+      ): result is { userId: string; referralCount: number; user: User } =>
+        result !== null
     );
 
     return {

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, Length } from "class-validator";
+import { IsString, IsNotEmpty, Length, IsOptional } from "class-validator";
 
 export class ApplyReferralCodeDto {
   @IsString()
@@ -10,11 +10,13 @@ export class ApplyReferralCodeDto {
 export class CompleteReferralDto {
   @IsString()
   @IsOptional()
+  @Length(1, 500)
   trigger?: string;
 }
 
 export class AdminCompleteReferralDto {
   @IsString()
   @IsOptional()
+  @Length(1, 1000)
   notes?: string;
 }

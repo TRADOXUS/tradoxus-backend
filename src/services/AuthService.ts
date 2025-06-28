@@ -15,6 +15,11 @@ import { CustomError } from "../types/errors";
 import { ReferralService } from "./ReferralService";
 import { ReferralStatus } from "../entities/Referral";
 
+interface ProfileUpdateData {
+  firstName?: string;
+  lastName?: string;
+}
+
 export class AuthService extends BaseService<User> {
   private referralService: ReferralService;
 
@@ -84,15 +89,21 @@ export class AuthService extends BaseService<User> {
    */
   async completeProfile(
     userId: string,
-    profileData: Partial<User>
+    profileData: ProfileUpdateData
   ): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error("User not found");
     }
 
-    // Update user profile
-    Object.assign(user, profileData);
+    // Type-safe property assignment without using 'any'
+    if (profileData.firstName !== undefined) {
+      user.firstName = profileData.firstName;
+    }
+    if (profileData.lastName !== undefined) {
+      user.lastName = profileData.lastName;
+    }
+
     const updatedUser = await this.userRepository.save(user);
 
     // Check and complete any pending referrals
@@ -109,7 +120,7 @@ export class AuthService extends BaseService<User> {
         );
       }
     } catch (error) {
-      console.warn(`Failed to complete referral: ${error.message}`);
+      console.warn("Failed to complete referral:", error);
     }
 
     return updatedUser;
@@ -336,28 +347,6 @@ export class AuthService extends BaseService<User> {
       return user;
     } catch (error) {
       throw new Error("Invalid token");
-    }
-  }
-
-  /**
-   * Complete pending referrals for a user
-   */
-  async completePendingReferrals(userId: string): Promise<void> {
-    try {
-      const userReferral = await this.referralService
-        .getReferralRepository()
-        .findOne({
-          where: { referredUserId: userId, status: ReferralStatus.PENDING },
-        });
-
-      if (userReferral) {
-        await this.referralService.completeReferral(
-          userReferral.id,
-          "profile_completed"
-        );
-      }
-    } catch (error) {
-      console.error("Error completing pending referrals:", error);
     }
   }
 }

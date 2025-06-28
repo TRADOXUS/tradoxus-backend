@@ -28,7 +28,13 @@ export class ReferralController {
         },
       });
     } catch (err) {
-      throw new AppError(500, "Failed to generate referral code");
+      if (err instanceof AppError) {
+        throw err;
+      }
+      throw new AppError(
+        500,
+        `Failed to generate referral code: ${err.message}`
+      );
     }
   }
 
@@ -57,11 +63,16 @@ export class ReferralController {
           expiresAt: referralCode.expiresAt,
           usageCount: referralCode.usageCount,
           maxUsage: referralCode.maxUsage,
-          shareUrl: `${process.env.FRONTEND_URL}/signup?ref=${referralCode.code}`,
+          shareUrl: process.env.FRONTEND_URL
+            ? `${process.env.FRONTEND_URL}/signup?ref=${referralCode.code}`
+            : `/signup?ref=${referralCode.code}`,
         },
       });
     } catch (err) {
-      throw new AppError(500, "Failed to fetch referral code");
+      if (err instanceof AppError) {
+        throw err;
+      }
+      throw new AppError(500, `Failed to fetch referral code: ${err.message}`);
     }
   }
 
@@ -144,8 +155,15 @@ export class ReferralController {
   // GET /api/referral/admin/all
   async getAllReferrals(req: Request, res: Response): Promise<void> {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(
+        100,
+        Math.max(1, parseInt(req.query.limit as string) || 10)
+      );
+
+      if (isNaN(page) || isNaN(limit)) {
+        throw new AppError(400, "Invalid pagination parameters");
+      }
 
       const referrals = await this.referralService.getAllReferrals(page, limit);
       res.json({
@@ -153,7 +171,10 @@ export class ReferralController {
         data: referrals,
       });
     } catch (err) {
-      throw new AppError(500, "Failed to fetch referrals");
+      if (err instanceof AppError) {
+        throw err;
+      }
+      throw new AppError(500, `Failed to fetch referrals: ${err.message}`);
     }
   }
 

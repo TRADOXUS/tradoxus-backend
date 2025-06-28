@@ -3,6 +3,12 @@ import { ReferralController } from "../controllers/ReferralController";
 import { asyncHandler } from "../utils/asyncHandler";
 import { authenticate } from "../middleware/authMiddleware";
 import { requireAdmin } from "../middleware/adminAuthMiddleware";
+import { validateDto } from "../middleware/validation";
+import {
+  ApplyReferralCodeDto,
+  CompleteReferralDto,
+  AdminCompleteReferralDto,
+} from "../dto/ReferralDto";
 
 const router = Router();
 const referralController = new ReferralController();
@@ -23,6 +29,7 @@ router.get(
 router.post(
   "/apply-code",
   authenticate,
+  validateDto(ApplyReferralCodeDto),
   asyncHandler((req, res) => referralController.applyCode(req, res))
 );
 
@@ -36,6 +43,7 @@ router.get(
 router.post(
   "/complete/:referralId",
   authenticate,
+  validateDto(CompleteReferralDto),
   asyncHandler((req, res) => referralController.completeReferral(req, res))
 );
 
@@ -51,6 +59,7 @@ router.post(
   "/admin/complete/:referralId",
   authenticate,
   requireAdmin,
+  validateDto(AdminCompleteReferralDto),
   asyncHandler((req, res) => referralController.adminCompleteReferral(req, res))
 );
 

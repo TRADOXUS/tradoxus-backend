@@ -6,15 +6,18 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  Index,
 } from "typeorm";
 import { User } from "./User";
 
 @Entity("referral_codes")
+@Index(["userId", "isActive"])
 export class ReferralCode {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ type: "varchar", length: 20, unique: true })
+  @Index()
   code: string;
 
   @Column({ type: "uuid" })
@@ -25,6 +28,7 @@ export class ReferralCode {
   user: User;
 
   @Column({ type: "boolean", default: true })
+  @Index()
   isActive: boolean;
 
   @Column({ type: "int", default: 0 })
@@ -34,6 +38,7 @@ export class ReferralCode {
   maxUsage: number;
 
   @Column({ type: "timestamp", nullable: true })
+  @Index()
   expiresAt: Date;
 
   @CreateDateColumn()
