@@ -1,120 +1,131 @@
-import type { Request, Response } from "express"
-import type { PortfolioService } from "../services/PortfolioService"
-import type { CreateTransactionDto, UpdateTransactionDto, PortfolioQueryDto } from "../dto/PortfolioDto"
-import { AppError } from "../utils/AppError"
+import { Request, Response } from "express"
+import { PortfolioService } from "../services/PortfolioService"
 import { asyncHandler } from "../utils/asyncHandler"
+import { AppError } from "../utils/AppError"
+import { validateRequestEx } from "../middleware/validateRequestEx"
+
+import { query, param } from "express-validator"
+import { RequestHandler } from "express"
 
 export class PortfolioController {
-  constructor(private portfolioService: PortfolioService) {}
+  private portfolioService: PortfolioService
 
-  getDashboardPortfolio = asyncHandler(async (req: Request, res: Response) => {
+  constructor() {
+    this.portfolioService = new PortfolioService()
+  }
+
+  getPortfolioSummary: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id
     if (!userId) {
       throw new AppError("User not authenticated", 401)
     }
 
-    const query: PortfolioQueryDto = {
-      limit: Number.parseInt(req.query.limit as string) || 10,
-      offset: Number.parseInt(req.query.offset as string) || 0,
-      asset: req.query.asset as string,
-      startDate: req.query.startDate as string,
-      endDate: req.query.endDate as string,
-    }
+    const summary = await this.portfolioService.getPortfolioSummary(userId)
 
-    const portfolio = await this.portfolioService.getPortfolio(userId, query)
-
-    res.json({
+    res.status(200).json({
       success: true,
-      data: portfolio,
+      data: summary,
+      message: "Portfolio summary retrieved successfully",
     })
   })
 
-  getBalances = asyncHandler(async (req: Request, res: Response) => {
+  getAssetBalances: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id
     if (!userId) {
       throw new AppError("User not authenticated", 401)
     }
 
-    const balances = await this.portfolioService.getUserBalances(userId)
+    const balances = await this.portfolioService.getAssetBalances(userId)
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: balances,
+      message: "Asset balances retrieved successfully",
     })
   })
 
-  getTransactionHistory = asyncHandler(async (req: Request, res: Response) => {
+  getTransactionHistory: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id
     if (!userId) {
       throw new AppError("User not authenticated", 401)
     }
 
-    const query: PortfolioQueryDto = {
-      limit: Number.parseInt(req.query.limit as string) || 10,
-      offset: Number.parseInt(req.query.offset as string) || 0,
-      asset: req.query.asset as string,
-      startDate: req.query.startDate as string,
-      endDate: req.query.endDate as string,
-    }
+    const limit = Number.parseInt(req.query.limit as string) || 50
+    const offset = Number.parseInt(req.query.offset as string) || 0
+    const asset = req.query.asset as string
 
-    const result = await this.portfolioService.getTransactionHistory(userId, query)
+    const result = await this.portfolioService.getTransactionHistory(userId, limit, offset, asset)
 
-    res.json({
+    res.status(200).json({
       success: true,
-      data: result.transactions,
-      pagination: {
-        total: result.total,
-        limit: query.limit,
-        offset: query.offset,
-        hasMore: (query.offset || 0) + (query.limit || 10) < result.total,
-      },
+      data: result,
+      message: "Transaction history retrieved successfully",
     })
   })
 
-  createTransaction = asyncHandler(async (req: Request, res: Response) => {
+  getPortfolioPerformance: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id
     if (!userId) {
       throw new AppError("User not authenticated", 401)
     }
 
-    const createTransactionDto: CreateTransactionDto = req.body
-    const transaction = await this.portfolioService.createTransaction(userId, createTransactionDto)
+    const period = req.params.period as "day" | "week" | "month" | "year"
 
-    res.status(201).json({
+    if (!["day", "week", "month", "year"].includes(period)) {
+      throw new AppError("Invalid period. Must be one of: day, week, month, year", 400)
+    }
+
+    const performance = await this.portfolioService.getPortfolioPerformance(userId, period)
+
+    res.status(200).json({
       success: true,
-      data: transaction,
+      data: performance,
+      message: "Portfolio performance retrieved successfully",
     })
   })
 
-  updateTransaction = asyncHandler(async (req: Request, res: Response) => {
+  getPortfolioHistory: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id
-    const transactionId = req.params.id
-
     if (!userId) {
       throw new AppError("User not authenticated", 401)
     }
 
-    const updateTransactionDto: UpdateTransactionDto = req.body
-    const transaction = await this.portfolioService.updateTransaction(transactionId, userId, updateTransactionDto)
+    const period = req.params.period as "day" | "week" | "month" | "year"
+    const points = Number.parseInt(req.query.points as string) || 30
 
-    res.json({
-      success: true,
-      data: transaction,
-    })
-  })
-
-  getTransaction = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id
-    const transactionId = req.params.id
-
-    if (!userId) {
-      throw new AppError("User not authenticated", 401)
+    if (!["day", "week", "month", "year"].includes(period)) {
+      throw new AppError("Invalid period. Must be one of: day, week, month, year", 400)
     }
 
-    // This would be implemented in the service
-    res.json({
+    if (points < 1 || points > 365) {
+      throw new AppError("Points must be between 1 and 365", 400)
+    }
+
+    const history = await this.portfolioService.getPortfolioHistory(userId, period, points)
+
+    res.status(200).json({
       success: true,
-      message: "Transaction details endpoint - to be implemented",
+      data: history,
+      message: "Portfolio history retrieved successfully",
     })
   })
+
+  // ✅ Express-validator middleware chains
+  static validateTransactionHistory: RequestHandler[] = [
+    query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Limit must be between 1 and 100"),
+    query("offset").optional().isInt({ min: 0 }).withMessage("Offset must be non-negative"),
+    query("asset").optional().isString().isLength({ min: 1, max: 20 }).withMessage("Asset must be 1–20 characters"),
+    validateRequestEx,
+  ]
+
+  static validatePeriodParam: RequestHandler[] = [
+    param("period").isIn(["day", "week", "month", "year"]).withMessage("Period must be one of: day, week, month, year"),
+    validateRequestEx,
+  ]
+
+  static validateHistoryQuery: RequestHandler[] = [
+    param("period").isIn(["day", "week", "month", "year"]).withMessage("Period must be one of: day, week, month, year"),
+    query("points").optional().isInt({ min: 1, max: 365 }).withMessage("Points must be between 1 and 365"),
+    validateRequestEx,
+  ]
 }

@@ -1,14 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  Index,
-} from "typeorm"
-import { User } from "./User"
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from "typeorm"
 
 export enum TransactionType {
   BUY = "BUY",
@@ -17,6 +7,8 @@ export enum TransactionType {
   WITHDRAWAL = "WITHDRAWAL",
   TRANSFER_IN = "TRANSFER_IN",
   TRANSFER_OUT = "TRANSFER_OUT",
+  REWARD = "REWARD",
+  FEE = "FEE",
 }
 
 export enum TransactionStatus {
@@ -27,67 +19,58 @@ export enum TransactionStatus {
 }
 
 @Entity("transactions")
+@Index(["userId", "createdAt"])
+@Index(["userId", "asset"])
+@Index(["userId", "type"])
 @Index(["userId", "status"])
-@Index(["asset", "createdAt"])
-@Index(["userId", "asset", "status"])
+@Index(["txHash"])
 export class Transaction {
   @PrimaryGeneratedColumn("uuid")
-  id: string
+  id!: string
 
   @Column({ type: "uuid" })
-  userId: string
+  userId!: string
 
-  @ManyToOne(
-    () => User,
-    (user) => user.id,
-    { onDelete: "CASCADE" },
-  )
-  @JoinColumn({ name: "userId" })
-  user: User
+  @Column({
+    type: "enum",
+    enum: TransactionType,
+  })
+  type!: TransactionType
+
+  @Column({
+    type: "enum",
+    enum: TransactionStatus,
+    default: TransactionStatus.PENDING,
+  })
+  status!: TransactionStatus
 
   @Column({ type: "varchar", length: 20 })
-  asset: string // XLM, USDC, etc.
+  asset!: string
 
-  @Column({ type: "enum", enum: TransactionType })
-  type: TransactionType
+  @Column({ type: "decimal", precision: 28, scale: 8 })
+  amount!: string
 
-  @Column({ type: "decimal", precision: 20, scale: 7 })
-  amount: string
+  @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
+  price!: string | null
 
-  @Column({ type: "decimal", precision: 20, scale: 7, nullable: true })
-  price: string // Price per unit in USD
+  @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
+  fee!: string | null
 
-  @Column({ type: "decimal", precision: 20, scale: 7, nullable: true })
-  fee: string
+  @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
+  totalValue!: string | null
 
-  @Column({ type: "enum", enum: TransactionStatus, default: TransactionStatus.PENDING })
-  status: TransactionStatus
-
-  @Column({ type: "varchar", length: 255, nullable: true })
-  txHash: string // Blockchain transaction hash
+  @Column({ type: "varchar", length: 100, nullable: true })
+  txHash!: string | null
 
   @Column({ type: "text", nullable: true })
-  metadata: string // JSON string for additional data
+  description!: string | null
+
+  @Column({ type: "jsonb", nullable: true })
+  metadata!: string | null
 
   @CreateDateColumn()
-  createdAt: Date
+  createdAt!: Date
 
   @UpdateDateColumn()
-  updatedAt: Date
-
-  // Virtual properties for calculations
-  get totalValue(): number {
-    if (!this.price) return 0
-    return Number.parseFloat(this.amount) * Number.parseFloat(this.price)
-  }
-
-  get netAmount(): number {
-    const amount = Number.parseFloat(this.amount)
-    const fee = this.fee ? Number.parseFloat(this.fee) : 0
-
-    if (this.type === TransactionType.BUY || this.type === TransactionType.DEPOSIT) {
-      return amount - fee
-    }
-    return amount + fee
-  }
+  updatedAt!: Date
 }

@@ -1,361 +1,459 @@
 import { Repository } from "typeorm"
-import { Transaction, TransactionStatus, TransactionType } from "../entities/Transaction"
+import { AppDataSource } from "../config/database"
 import { Balance } from "../entities/Balance"
-import { User } from "../entities/User"
-import { AppError } from "../utils/AppError"
+import { Transaction, TransactionType, TransactionStatus } from "../entities/Transaction"
+import { BaseService } from "./BaseService"
 import { redisClient } from "../config/redis"
 import {
-  CreateTransactionDto,
-  UpdateTransactionDto,
-  PortfolioQueryDto,
-  AssetBalance,
-  PortfolioSummary,
-  TransactionSummary,
-  PortfolioResponse,
+  PortfolioSummaryDto,
+  AssetBalanceDto,
+  TransactionDto,
+  PortfolioPerformanceDto,
+  PortfolioHistoryDto,
 } from "../dto/PortfolioDto"
+import {
+  calculateTotals,
+  calculateAssetPnL,
+  calculateFIFOCostBasis,
+  calculatePerformanceMetrics,
+  calculateSharpeRatio,
+  calculateDiversificationScore,
+} from "../utils/portfolioCalculations"
+import Decimal from "decimal.js"
 
-export class PortfolioService {
-  constructor(
-    private transactionRepository: Repository<Transaction>,
-    private balanceRepository: Repository<Balance>,
-    private userRepository: Repository<User>,
-  ) {}
+// Configure Decimal.js for financial precision
+Decimal.set({
+  precision: 28,
+  rounding: Decimal.ROUND_HALF_UP,
+  toExpNeg: -7,
+  toExpPos: 21,
+})
 
-  async createTransaction(userId: string, createTransactionDto: CreateTransactionDto): Promise<Transaction> {
-    const user = await this.userRepository.findOne({ where: { id: userId } })
-    if (!user) {
-      throw new AppError("User not found", 404)
-    }
+export class PortfolioService extends BaseService<Balance> {
+  private balanceRepository: Repository<Balance>
+  private transactionRepository: Repository<Transaction>
 
-    const transaction = this.transactionRepository.create({
-      userId,
-      ...createTransactionDto,
-      amount: createTransactionDto.amount.toString(),
-      price: createTransactionDto.price?.toString(),
-      fee: createTransactionDto.fee?.toString(),
-      metadata: createTransactionDto.metadata ? JSON.stringify(createTransactionDto.metadata) : undefined,
-    })
-
-    const savedTransaction = await this.transactionRepository.save(transaction)
-
-    // Update balance if transaction is completed
-    const tx: Transaction = Array.isArray(savedTransaction) ? savedTransaction[0] : savedTransaction
-    if (tx.status === TransactionStatus.COMPLETED) {
-      await this.updateBalance(userId, tx)
-    }
-
-    // Invalidate cache
-    await this.invalidatePortfolioCache(userId)
-
-    return tx
+  constructor() {
+    super(Balance)
+    this.balanceRepository = AppDataSource.getRepository(Balance)
+    this.transactionRepository = AppDataSource.getRepository(Transaction)
   }
 
-  async updateTransaction(
-    transactionId: string,
-    userId: string,
-    updateTransactionDto: UpdateTransactionDto,
-  ): Promise<Transaction> {
-    const transaction = await this.transactionRepository.findOne({
-      where: { id: transactionId, userId },
-    })
+  async getPortfolioSummary(userId: string): Promise<PortfolioSummaryDto> {
+    const cacheKey = `portfolio:summary:${userId}`
 
-    if (!transaction) {
-      throw new AppError("Transaction not found", 404)
+    // Try to get from cache first
+    const cached = await redisClient.get(cacheKey)
+    if (cached) {
+      return JSON.parse(cached)
     }
 
-    const oldStatus = transaction.status
-    Object.assign(transaction, {
-      ...updateTransactionDto,
-      metadata: updateTransactionDto.metadata ? JSON.stringify(updateTransactionDto.metadata) : transaction.metadata,
-    })
-
-    const updatedTransaction = await this.transactionRepository.save(transaction)
-
-    // Update balance if status changed to completed
-    if (oldStatus !== TransactionStatus.COMPLETED && updatedTransaction.status === TransactionStatus.COMPLETED) {
-      await this.updateBalance(userId, updatedTransaction)
-    }
-
-    // Invalidate cache
-    await this.invalidatePortfolioCache(userId)
-
-    return updatedTransaction
-  }
-
-  async getPortfolio(userId: string, query: PortfolioQueryDto = {}): Promise<PortfolioResponse> {
-    const cacheKey = `portfolio:${userId}:${JSON.stringify(query)}`
-
-    try {
-      const cached = await redisClient.get(cacheKey)
-      if (cached) {
-        return JSON.parse(cached)
-      }
-    } catch (error) {
-      console.warn("Redis cache read failed:", error)
-    }
-
-    const [balances, recentTransactions] = await Promise.all([
-      this.getUserBalances(userId),
-      this.getRecentTransactions(userId, query.limit || 10),
-    ])
-
+    const balances = await this.getBalances(userId)
     const prices = await this.getCurrentPrices(balances.map((b) => b.asset))
-    const summary = await this.calculatePortfolioSummary(balances, prices)
 
-    const response: PortfolioResponse = {
-      summary,
-      recentTransactions,
-      lastUpdated: new Date(),
+    const summary = calculateTotals(
+      balances.map((b) => ({
+        ...b,
+        available: Number.parseFloat(b.available),
+        locked: Number.parseFloat(b.locked),
+        total: Number.parseFloat(b.total),
+        averageCost: b.averageCost ? Number.parseFloat(b.averageCost) : null,
+        unrealizedPnL: b.unrealizedPnL ? Number.parseFloat(b.unrealizedPnL) : null,
+        realizedPnL: b.realizedPnL ? Number.parseFloat(b.realizedPnL) : null,
+      })),
+      prices,
+    )
+
+    // Calculate additional metrics
+    const returns = await this.calculateReturns(userId, "day", 30)
+
+    const portfolioSummary: PortfolioSummaryDto = {
+      ...summary,
+      diversificationScore: calculateDiversificationScore(summary.allocation),
+      sharpeRatio: returns.length > 0 ? calculateSharpeRatio(returns) : undefined,
+      maxDrawdown: undefined, // Will be calculated from historical data
+      cagr: undefined, // Will be calculated from historical data
     }
 
-    // Cache for 10 seconds
-    try {
-      await redisClient.setEx(cacheKey, 10, JSON.stringify(response))
-    } catch (error) {
-      console.warn("Redis cache write failed:", error)
-    }
+    // Cache for 30 seconds
+    await redisClient.setEx(cacheKey, 30, JSON.stringify(portfolioSummary))
 
-    return response
+    return portfolioSummary
   }
 
-  async getUserBalances(userId: string): Promise<Balance[]> {
-    return this.balanceRepository.find({
-      where: { userId },
-      order: { asset: "ASC" },
-    })
-  }
+  async getAssetBalances(userId: string): Promise<AssetBalanceDto[]> {
+    const balances = await this.getBalances(userId)
+    const prices = await this.getCurrentPrices(balances.map((b) => b.asset))
 
-  async getRecentTransactions(userId: string, limit = 10): Promise<TransactionSummary[]> {
-    const transactions = await this.transactionRepository.find({
-      where: { userId },
-      order: { createdAt: "DESC" },
-      take: limit,
-    })
+    return balances.map((balance) => {
+      const numericBalance = {
+        ...balance,
+        available: Number.parseFloat(balance.available),
+        locked: Number.parseFloat(balance.locked),
+        total: Number.parseFloat(balance.total),
+        averageCost: balance.averageCost ? Number.parseFloat(balance.averageCost) : null,
+        unrealizedPnL: balance.unrealizedPnL ? Number.parseFloat(balance.unrealizedPnL) : null,
+        realizedPnL: balance.realizedPnL ? Number.parseFloat(balance.realizedPnL) : null,
+      }
 
-    return transactions.map((tx) => ({
-      id: tx.id,
-      asset: tx.asset,
-      type: tx.type,
-      amount: Number.parseFloat(tx.amount),
-      price: tx.price ? Number.parseFloat(tx.price) : null,
-      fee: tx.fee ? Number.parseFloat(tx.fee) : null,
-      status: tx.status,
-      totalValue: tx.totalValue,
-      createdAt: tx.createdAt,
-      txHash: tx.txHash,
-    }))
+      const currentPrice = prices[balance.asset] || 0
+      const pnl = calculateAssetPnL(numericBalance, currentPrice)
+
+      return {
+        asset: balance.asset,
+        available: numericBalance.available,
+        locked: numericBalance.locked,
+        total: numericBalance.total,
+        currentValue: pnl.currentValue,
+        averageCost: numericBalance.averageCost !== null ? numericBalance.averageCost : undefined,
+        unrealizedPnL: pnl.unrealizedPnL !== null ? pnl.unrealizedPnL : undefined,
+        realizedPnL: pnl.realizedPnL !== null ? pnl.realizedPnL : undefined,
+        totalPnL: pnl.totalPnL !== null ? pnl.totalPnL : undefined,
+        currentPrice,
+      }
+    })
   }
 
   async getTransactionHistory(
     userId: string,
-    query: PortfolioQueryDto,
-  ): Promise<{ transactions: TransactionSummary[]; total: number }> {
+    limit = 50,
+    offset = 0,
+    asset?: string,
+  ): Promise<{ transactions: TransactionDto[]; total: number }> {
     const queryBuilder = this.transactionRepository
       .createQueryBuilder("transaction")
       .where("transaction.userId = :userId", { userId })
-
-    if (query.asset) {
-      queryBuilder.andWhere("transaction.asset = :asset", { asset: query.asset })
-    }
-
-    if (query.startDate) {
-      queryBuilder.andWhere("transaction.createdAt >= :startDate", { startDate: query.startDate })
-    }
-
-    if (query.endDate) {
-      queryBuilder.andWhere("transaction.createdAt <= :endDate", { endDate: query.endDate })
-    }
-
-    const total = await queryBuilder.getCount()
-
-    const transactions = await queryBuilder
       .orderBy("transaction.createdAt", "DESC")
-      .skip(query.offset || 0)
-      .take(query.limit || 10)
-      .getMany()
+
+    if (asset) {
+      queryBuilder.andWhere("transaction.asset = :asset", { asset })
+    }
+
+    const [transactions, total] = await queryBuilder.skip(offset).take(limit).getManyAndCount()
+
+    const transactionDtos: TransactionDto[] = transactions.map((tx) => ({
+      id: tx.id,
+      type: tx.type,
+      status: tx.status,
+      asset: tx.asset,
+      amount: Number.parseFloat(tx.amount),
+      price: tx.price ? Number.parseFloat(tx.price) : undefined,
+      fee: tx.fee ? Number.parseFloat(tx.fee) : undefined,
+      totalValue: tx.totalValue ? Number.parseFloat(tx.totalValue) : undefined,
+      txHash: tx.txHash || undefined,
+      description: tx.description || undefined,
+      createdAt: tx.createdAt,
+    }))
+
+    return { transactions: transactionDtos, total }
+  }
+
+  async getPortfolioPerformance(
+    userId: string,
+    period: "day" | "week" | "month" | "year",
+  ): Promise<PortfolioPerformanceDto> {
+    const currentValue = await this.getCurrentPortfolioValue(userId)
+    const previousValue = await this.getHistoricalPortfolioValue(userId, period)
+
+    const performance = calculatePerformanceMetrics(currentValue, previousValue, period)
 
     return {
-      transactions: transactions.map((tx) => ({
-        id: tx.id,
-        asset: tx.asset,
-        type: tx.type,
-        amount: Number.parseFloat(tx.amount),
-        price: tx.price ? Number.parseFloat(tx.price) : null,
-        fee: tx.fee ? Number.parseFloat(tx.fee) : null,
-        status: tx.status,
-        totalValue: tx.totalValue,
-        createdAt: tx.createdAt,
-        txHash: tx.txHash,
-      })),
-      total,
+      currentValue,
+      previousValue,
+      ...performance,
+      period,
     }
   }
 
-  private async updateBalance(userId: string, transaction: Transaction): Promise<void> {
-    let balance = await this.balanceRepository.findOne({
-      where: { userId, asset: transaction.asset },
+  async getPortfolioHistory(
+    userId: string,
+    period: "day" | "week" | "month" | "year",
+    points = 30,
+  ): Promise<PortfolioHistoryDto> {
+    // This would typically query historical snapshots
+    // For now, we'll simulate with recent transaction data
+    const transactions = await this.getRecentTransactions(userId, points * 10)
+
+    // Group transactions by time periods and calculate portfolio value at each point
+    const timestamps: Date[] = []
+    const values: number[] = []
+
+    // Simplified implementation - in production, you'd have portfolio snapshots
+    let runningValue = 0
+    const groupedTx = this.groupTransactionsByPeriod(transactions, period, points)
+
+    for (const [timestamp, txGroup] of groupedTx) {
+      timestamps.push(timestamp)
+      // Calculate portfolio value at this point in time
+      runningValue += txGroup.reduce((sum, tx) => {
+        const amount = Number.parseFloat(tx.amount)
+        const price = tx.price ? Number.parseFloat(tx.price) : 0
+        return sum + (tx.type === TransactionType.BUY ? amount * price : -amount * price)
+      }, 0)
+      values.push(runningValue)
+    }
+
+    const returns = this.calculateReturnsFromValues(values)
+    const totalReturn = values.length > 1 ? ((values[values.length - 1] - values[0]) / values[0]) * 100 : 0
+    const volatility = this.calculateVolatility(returns)
+
+    return {
+      timestamps,
+      values,
+      period,
+      totalReturn,
+      volatility,
+    }
+  }
+
+  async updateBalance(userId: string, asset: string, transaction: Transaction): Promise<void> {
+    const queryRunner = AppDataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+
+    try {
+      let balance = await queryRunner.manager.findOne(Balance, {
+        where: { userId, asset },
+      })
+
+      if (!balance) {
+        balance = new Balance()
+        balance.userId = userId
+        balance.asset = asset
+        balance.available = "0"
+        balance.locked = "0"
+        balance.total = "0"
+        balance.averageCost = null
+        balance.unrealizedPnL = null
+        balance.realizedPnL = null
+      }
+
+      // Update balance based on transaction type
+      const amount = new Decimal(transaction.amount)
+      const currentAvailable = new Decimal(balance.available)
+      const currentTotal = new Decimal(balance.total)
+
+      switch (transaction.type) {
+        case TransactionType.BUY:
+        case TransactionType.DEPOSIT:
+        case TransactionType.TRANSFER_IN:
+        case TransactionType.REWARD:
+          balance.available = currentAvailable.plus(amount).toString()
+          balance.total = currentTotal.plus(amount).toString()
+          break
+
+        case TransactionType.SELL:
+        case TransactionType.WITHDRAWAL:
+        case TransactionType.TRANSFER_OUT:
+        case TransactionType.FEE:
+          balance.available = currentAvailable.minus(amount).toString()
+          balance.total = currentTotal.minus(amount).toString()
+          break
+      }
+
+      // Recalculate cost basis and P&L
+      await this.recalculateCostBasis(userId, asset, queryRunner.manager)
+
+      await queryRunner.manager.save(balance)
+      await queryRunner.commitTransaction()
+
+      // Invalidate cache
+      await redisClient.del(`portfolio:summary:${userId}`)
+      await redisClient.del(`balances:${userId}`)
+    } catch (error) {
+      await queryRunner.rollbackTransaction()
+      throw error
+    } finally {
+      await queryRunner.release()
+    }
+  }
+
+  private async getBalances(userId: string): Promise<Balance[]> {
+    const cacheKey = `balances:${userId}`
+    const cached = await redisClient.get(cacheKey)
+
+    if (cached) {
+      return JSON.parse(cached)
+    }
+
+    const balances = await this.balanceRepository.find({
+      where: { userId },
+      order: { asset: "ASC" },
     })
 
-    if (!balance) {
-      balance = this.balanceRepository.create({
-        userId,
-        asset: transaction.asset,
-        available: "0",
-        locked: "0",
-        averageCost: "0",
-      })
-    }
-
-    const currentAvailable = Number.parseFloat(balance.available)
-    const currentAverageCost = Number.parseFloat(balance.averageCost)
-    const transactionAmount = Number.parseFloat(transaction.amount)
-    const transactionPrice = transaction.price ? Number.parseFloat(transaction.price) : 0
-
-    switch (transaction.type) {
-      case TransactionType.BUY:
-      case TransactionType.DEPOSIT:
-      case TransactionType.TRANSFER_IN:
-        // Increase balance and update average cost
-        const newTotal = currentAvailable + transactionAmount
-        if (transactionPrice > 0 && transaction.type === TransactionType.BUY) {
-          const totalCost = currentAvailable * currentAverageCost + transactionAmount * transactionPrice
-          balance.averageCost = (totalCost / newTotal).toString()
-        }
-        balance.available = newTotal.toString()
-        break
-
-      case TransactionType.SELL:
-      case TransactionType.WITHDRAWAL:
-      case TransactionType.TRANSFER_OUT:
-        // Decrease balance
-        const newAvailable = Math.max(0, currentAvailable - transactionAmount)
-        balance.available = newAvailable.toString()
-        break
-    }
-
-    await this.balanceRepository.save(balance)
+    await redisClient.setEx(cacheKey, 60, JSON.stringify(balances))
+    return balances
   }
 
   private async getCurrentPrices(assets: string[]): Promise<Record<string, number>> {
+    // This would integrate with external price APIs
+    // For now, return mock prices
     const prices: Record<string, number> = {}
 
-    // Try to get prices from cache first
     for (const asset of assets) {
-      try {
-        const cachedPrice = await redisClient.get(`price:${asset}`)
-        if (cachedPrice) {
-          prices[asset] = Number.parseFloat(cachedPrice)
-        }
-      } catch (error) {
-        console.warn(`Failed to get cached price for ${asset}:`, error)
-      }
-    }
+      const cacheKey = `price:${asset}`
+      const cached = await redisClient.get(cacheKey)
 
-    // For missing prices, you would typically call an external price API
-    // For now, we'll use mock prices
-    const mockPrices: Record<string, number> = {
-      XLM: 0.12,
-      USDC: 1.0,
-      BTC: 45000,
-      ETH: 3000,
-    }
-
-    for (const asset of assets) {
-      if (!prices[asset]) {
-        prices[asset] = mockPrices[asset] || 0
-
-        // Cache the price for 30 seconds
-        try {
-          await redisClient.setEx(`price:${asset}`, 30, prices[asset].toString())
-        } catch (error) {
-          console.warn(`Failed to cache price for ${asset}:`, error)
-        }
+      if (cached) {
+        prices[asset] = Number.parseFloat(cached)
+      } else {
+        // Mock price - in production, fetch from external API
+        const mockPrice = this.getMockPrice(asset)
+        prices[asset] = mockPrice
+        await redisClient.setEx(cacheKey, 30, mockPrice.toString())
       }
     }
 
     return prices
   }
 
-  private async calculatePortfolioSummary(
-    balances: Balance[],
-    prices: Record<string, number>,
-  ): Promise<PortfolioSummary> {
-    const assetBalances: AssetBalance[] = []
-    let totalValue = 0
-    let totalCost = 0
+  private getMockPrice(asset: string): number {
+    const mockPrices: Record<string, number> = {
+      XLM: 0.12,
+      USDC: 1.0,
+      BTC: 45000,
+      ETH: 3000,
+    }
+    return mockPrices[asset] || 1.0
+  }
 
-    for (const balance of balances) {
-      const currentPrice = prices[balance.asset] || 0
-      const total = balance.total
-      const averageCost = Number.parseFloat(balance.averageCost)
-      const value = total * currentPrice
-      const cost = total * averageCost
-      const unrealizedPnL = value - cost
-      const unrealizedPnLPercentage = cost > 0 ? (unrealizedPnL / cost) * 100 : 0
+  private async getRecentTransactions(userId: string, limit: number): Promise<Transaction[]> {
+    return this.transactionRepository.find({
+      where: { userId, status: TransactionStatus.COMPLETED },
+      order: { createdAt: "DESC" },
+      take: limit,
+    })
+  }
 
-      if (total > 0) {
-        assetBalances.push({
-          asset: balance.asset,
-          available: Number.parseFloat(balance.available),
-          locked: Number.parseFloat(balance.locked),
-          total,
-          averageCost,
-          currentPrice,
-          totalValue: value,
-          unrealizedPnL,
-          unrealizedPnLPercentage,
-        })
+  private async getCurrentPortfolioValue(userId: string): Promise<number> {
+    const summary = await this.getPortfolioSummary(userId)
+    return summary.totalValue
+  }
 
-        totalValue += value
-        totalCost += cost
+  private async getHistoricalPortfolioValue(
+    userId: string,
+    period: "day" | "week" | "month" | "year",
+  ): Promise<number> {
+    // This would query historical snapshots
+    // For now, simulate based on recent transactions
+    const daysBack = period === "day" ? 1 : period === "week" ? 7 : period === "month" ? 30 : 365
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - daysBack)
+
+    const transactions = await this.transactionRepository.find({
+      where: {
+        userId,
+        status: TransactionStatus.COMPLETED,
+      },
+      order: { createdAt: "ASC" },
+    })
+
+    // Filter transactions before cutoff date
+    const historicalTransactions = transactions.filter((tx) => tx.createdAt <= cutoffDate)
+
+    // Simplified calculation - in production, use portfolio snapshots
+    return historicalTransactions.reduce((sum, tx) => {
+      const value = tx.totalValue ? Number.parseFloat(tx.totalValue) : 0
+      return tx.type === TransactionType.BUY ? sum + value : sum - value
+    }, 0)
+  }
+
+  private async calculateReturns(
+    userId: string,
+    period: "day" | "week" | "month" | "year",
+    points: number,
+  ): Promise<number[]> {
+    const history = await this.getPortfolioHistory(userId, period, points)
+    return this.calculateReturnsFromValues(history.values)
+  }
+
+  private calculateReturnsFromValues(values: number[]): number[] {
+    const returns: number[] = []
+    for (let i = 1; i < values.length; i++) {
+      if (values[i - 1] !== 0) {
+        returns.push((values[i] - values[i - 1]) / values[i - 1])
       }
     }
+    return returns
+  }
 
-    const totalPnL = totalValue - totalCost
-    const totalPnLPercentage = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0
+  private calculateVolatility(returns: number[]): number {
+    if (returns.length < 2) return 0
 
-    const allocation = assetBalances.map((balance) => ({
-      asset: balance.asset,
-      value: balance.totalValue,
-      percentage: totalValue > 0 ? (balance.totalValue / totalValue) * 100 : 0,
+    const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (returns.length - 1)
+    return Math.sqrt(variance) * Math.sqrt(252) // Annualized volatility
+  }
+
+  private groupTransactionsByPeriod(
+    transactions: Transaction[],
+    period: "day" | "week" | "month" | "year",
+    points: number,
+  ): Map<Date, Transaction[]> {
+    const grouped = new Map<Date, Transaction[]>()
+
+    // Simplified grouping logic
+    transactions.forEach((tx) => {
+      const date = new Date(tx.createdAt)
+      // Round date based on period
+      const key = this.roundDateToPeriod(date, period)
+
+      if (!grouped.has(key)) {
+        grouped.set(key, [])
+      }
+      grouped.get(key)!.push(tx)
+    })
+
+    return grouped
+  }
+
+  private roundDateToPeriod(date: Date, period: "day" | "week" | "month" | "year"): Date {
+    const rounded = new Date(date)
+
+    switch (period) {
+      case "day":
+        rounded.setHours(0, 0, 0, 0)
+        break
+      case "week":
+        rounded.setDate(rounded.getDate() - rounded.getDay())
+        rounded.setHours(0, 0, 0, 0)
+        break
+      case "month":
+        rounded.setDate(1)
+        rounded.setHours(0, 0, 0, 0)
+        break
+      case "year":
+        rounded.setMonth(0, 1)
+        rounded.setHours(0, 0, 0, 0)
+        break
+    }
+
+    return rounded
+  }
+
+  private async recalculateCostBasis(userId: string, asset: string, manager: any): Promise<void> {
+    const transactions = await manager.find(Transaction, {
+      where: { userId, asset, status: TransactionStatus.COMPLETED },
+      order: { createdAt: "ASC" },
+    })
+
+    const numericTransactions = transactions.map((tx: Transaction) => ({
+      ...tx,
+      amount: Number.parseFloat(tx.amount),
+      price: tx.price ? Number.parseFloat(tx.price) : null,
+      fee: tx.fee ? Number.parseFloat(tx.fee) : null,
+      totalValue: tx.totalValue ? Number.parseFloat(tx.totalValue) : null,
     }))
 
-    return {
-      totalValue,
-      totalCost,
-      totalPnL,
-      totalPnLPercentage,
-      balances: assetBalances,
-      allocation,
-    }
-  }
+    const costBasis = calculateFIFOCostBasis(numericTransactions)
 
-  private async invalidatePortfolioCache(userId: string): Promise<void> {
-    try {
-      const pattern = `portfolio:${userId}:*`
-      const keys = await redisClient.keys(pattern)
-      if (keys.length > 0) {
-        await redisClient.del(keys)
-      }
-    } catch (error) {
-      console.warn("Failed to invalidate portfolio cache:", error)
-    }
-  }
-
-  async calculateTotals(balances: AssetBalance[]): Promise<{
-    totalValue: number
-    totalPnL: number
-    totalPnLPercentage: number
-  }> {
-    const totalValue = balances.reduce((sum, balance) => sum + balance.totalValue, 0)
-    const totalCost = balances.reduce((sum, balance) => sum + balance.total * balance.averageCost, 0)
-    const totalPnL = totalValue - totalCost
-    const totalPnLPercentage = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0
-
-    return {
-      totalValue,
-      totalPnL,
-      totalPnLPercentage,
-    }
+    await manager.update(
+      Balance,
+      { userId, asset },
+      {
+        averageCost: costBasis.averageCost.toString(),
+        realizedPnL: costBasis.realizedPnL.toString(),
+      },
+    )
   }
 }
