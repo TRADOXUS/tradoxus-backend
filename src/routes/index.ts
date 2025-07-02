@@ -17,6 +17,7 @@ import { User } from "../entities/User";
 import { LessonProgress } from "../entities/LessonProgress";
 import { Lesson } from "../entities/Lesson";
 import userRouter from "./userRoutes";
+import strategyRoutes from "./strategyRoutes";
 
 export function setupRoutes(): Router {
   const router = Router();
@@ -59,6 +60,9 @@ export function setupRoutes(): Router {
 
   // NFT routes
   router.use("/v1/nfts", nftRouter);
+
+  // Strategy Builder routes
+  router.use("/strategies", strategyRoutes);
 
   return router;
 }
