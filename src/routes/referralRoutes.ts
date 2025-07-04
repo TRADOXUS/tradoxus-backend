@@ -79,4 +79,61 @@ router.get(
   asyncHandler((req, res) => referralController.getStatistics(req, res)),
 );
 
+// Enhanced admin analytics endpoints
+router.get(
+  "/admin/analytics",
+  authenticate,
+  requireAdmin,
+  asyncHandler((req, res) => referralController.getAnalytics(req, res)),
+);
+
+router.get(
+  "/admin/performance",
+  authenticate,
+  requireAdmin,
+  asyncHandler((req, res) => referralController.getPerformanceMetrics(req, res)),
+);
+
+router.get(
+  "/admin/leaderboard",
+  authenticate,
+  requireAdmin,
+  asyncHandler((req, res) => referralController.getLeaderboard(req, res)),
+);
+
+router.get(
+  "/admin/cohort-analysis",
+  authenticate,
+  requireAdmin,
+  asyncHandler((req, res) => referralController.getCohortAnalysis(req, res)),
+);
+
+router.get(
+  "/admin/code-performance",
+  authenticate,
+  requireAdmin,
+  asyncHandler((req, res) => referralController.getCodePerformance(req, res)),
+);
+
+router.post(
+  "/admin/bulk-action",
+  authenticate,
+  requireAdmin,
+  asyncHandler((req, res) => referralController.bulkAction(req, res)),
+);
+
+router.get(
+  "/admin/export",
+  authenticate,
+  requireAdmin,
+  asyncHandler((req, res) => referralController.exportData(req, res)),
+);
+
+router.get(
+  "/admin/real-time-stats",
+  authenticate,
+  requireAdmin,
+  asyncHandler((req, res) => referralController.getRealTimeStats(req, res)),
+);
+
 export default router;
