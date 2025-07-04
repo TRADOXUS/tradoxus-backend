@@ -8,10 +8,10 @@ import { AppError } from "../middleware/errorHandler";
 
 // Configuration constants
 const REFERRER_REWARD_POINTS = parseInt(
-  process.env.REFERRER_REWARD_POINTS || "100",
+  process.env.REFERRER_REWARD_POINTS || "100"
 );
 const REFERRED_REWARD_POINTS = parseInt(
-  process.env.REFERRED_REWARD_POINTS || "50",
+  process.env.REFERRED_REWARD_POINTS || "50"
 );
 
 export class ReferralService extends BaseService<ReferralCode> {
@@ -80,7 +80,7 @@ export class ReferralService extends BaseService<ReferralCode> {
     }
     throw new AppError(
       500,
-      "Failed to generate unique referral code after multiple attempts",
+      "Failed to generate unique referral code after multiple attempts"
     );
   }
 
@@ -95,7 +95,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Validate and apply referral code
   async applyReferralCode(
     referredUserId: string,
-    code: string,
+    code: string
   ): Promise<Referral> {
     // Find the referral code
     const referralCode = await this.repository.findOne({
@@ -165,7 +165,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Complete referral (when referred user meets criteria)
   async completeReferral(
     referralId: string,
-    completionTrigger: string = "profile_completed",
+    completionTrigger: string = "profile_completed"
   ): Promise<Referral> {
     const referral = await this.referralRepo.findOne({
       where: { id: referralId },
@@ -204,13 +204,13 @@ export class ReferralService extends BaseService<ReferralCode> {
 
     const referralsMade = await this.referralRepo.find({
       where: { referrerId: userId },
-      relations: ["referredUser", "referralCode"],
+      relations: ["referredUser"],
       order: { createdAt: "DESC" },
     });
 
     const referralReceived = await this.referralRepo.findOne({
       where: { referredUserId: userId },
-      relations: ["referrer", "referralCode"],
+      relations: ["referrer"],
     });
 
     const totalRewardsEarned = referralsMade
@@ -228,13 +228,13 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Admin: Get all referrals with pagination
   async getAllReferrals(
     page: number = 1,
-    limit: number = 10,
+    limit: number = 10
   ): Promise<{
     items: Referral[];
     total: number;
   }> {
     const [items, total] = await this.referralRepo.findAndCount({
-      relations: ["referrer", "referredUser", "referralCode"],
+      relations: ["referrer", "referredUser"],
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: "DESC" },
@@ -246,7 +246,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Admin: Manually complete referral
   async adminCompleteReferral(
     referralId: string,
-    adminNotes?: string,
+    adminNotes?: string
   ): Promise<Referral> {
     const referral = await this.completeReferral(referralId, "admin_override");
 
@@ -301,7 +301,7 @@ export class ReferralService extends BaseService<ReferralCode> {
         sum +
         (r.rewardEarnedReferrer?.value || 0) +
         (r.rewardEarnedReferred?.value || 0),
-      0,
+      0
     );
 
     // Get top referrers
@@ -329,13 +329,13 @@ export class ReferralService extends BaseService<ReferralCode> {
             referralCount: parseInt(item.referralCount),
             user: user,
           };
-        }),
+        })
       )
     ).filter(
       (
-        result,
+        result
       ): result is { userId: string; referralCount: number; user: User } =>
-        result !== null,
+        result !== null
     );
 
     return {
