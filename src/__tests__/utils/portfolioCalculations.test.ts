@@ -7,7 +7,7 @@ import {
   calculateDiversificationScore,
   type NumericBalance,
   type NumericTransaction,
-} from "../../utils/portfolioCalculations"
+} from "../../utils/portfolioCalculations";
 
 describe("Portfolio Calculations", () => {
   describe("calculateTotals", () => {
@@ -31,26 +31,26 @@ describe("Portfolio Calculations", () => {
           unrealizedPnL: null,
           realizedPnL: 500,
         },
-      ]
+      ];
 
-      const prices = { BTC: 45000, ETH: 3000 }
+      const prices = { BTC: 45000, ETH: 3000 };
 
-      const result = calculateTotals(balances, prices)
+      const result = calculateTotals(balances, prices);
 
-      expect(result.totalValue).toBe(75000) // 45000 + 30000
-      expect(result.totalPnL).toBe(11500) // (45000-40000) + (30000-25000) + 1000 + 500
-      expect(result.allocation).toHaveLength(2)
-      expect(result.allocation[0].asset).toBe("BTC")
-      expect(result.allocation[0].percentage).toBeCloseTo(60) // 45000/75000 * 100
-    })
+      expect(result.totalValue).toBe(75000); // 45000 + 30000
+      expect(result.totalPnL).toBe(11500); // (45000-40000) + (30000-25000) + 1000 + 500
+      expect(result.allocation).toHaveLength(2);
+      expect(result.allocation[0].asset).toBe("BTC");
+      expect(result.allocation[0].percentage).toBeCloseTo(60); // 45000/75000 * 100
+    });
 
     it("should handle empty balances", () => {
-      const result = calculateTotals([], {})
+      const result = calculateTotals([], {});
 
-      expect(result.totalValue).toBe(0)
-      expect(result.totalPnL).toBe(0)
-      expect(result.allocation).toHaveLength(0)
-    })
+      expect(result.totalValue).toBe(0);
+      expect(result.totalPnL).toBe(0);
+      expect(result.allocation).toHaveLength(0);
+    });
 
     it("should filter out zero balances", () => {
       const balances: NumericBalance[] = [
@@ -72,15 +72,15 @@ describe("Portfolio Calculations", () => {
           unrealizedPnL: null,
           realizedPnL: null,
         },
-      ]
+      ];
 
-      const prices = { BTC: 45000, ETH: 3000 }
-      const result = calculateTotals(balances, prices)
+      const prices = { BTC: 45000, ETH: 3000 };
+      const result = calculateTotals(balances, prices);
 
-      expect(result.allocation).toHaveLength(1)
-      expect(result.allocation[0].asset).toBe("BTC")
-    })
-  })
+      expect(result.allocation).toHaveLength(1);
+      expect(result.allocation[0].asset).toBe("BTC");
+    });
+  });
 
   describe("calculateAssetPnL", () => {
     it("should calculate asset P&L correctly", () => {
@@ -92,15 +92,15 @@ describe("Portfolio Calculations", () => {
         averageCost: 40000,
         unrealizedPnL: null,
         realizedPnL: 1000,
-      }
+      };
 
-      const result = calculateAssetPnL(balance, 45000)
+      const result = calculateAssetPnL(balance, 45000);
 
-      expect(result.currentValue).toBe(45000)
-      expect(result.unrealizedPnL).toBe(5000) // 45000 - 40000
-      expect(result.realizedPnL).toBe(1000)
-      expect(result.totalPnL).toBe(6000) // 5000 + 1000
-    })
+      expect(result.currentValue).toBe(45000);
+      expect(result.unrealizedPnL).toBe(5000); // 45000 - 40000
+      expect(result.realizedPnL).toBe(1000);
+      expect(result.totalPnL).toBe(6000); // 5000 + 1000
+    });
 
     it("should handle null average cost", () => {
       const balance: NumericBalance = {
@@ -111,16 +111,16 @@ describe("Portfolio Calculations", () => {
         averageCost: null,
         unrealizedPnL: null,
         realizedPnL: 500,
-      }
+      };
 
-      const result = calculateAssetPnL(balance, 45000)
+      const result = calculateAssetPnL(balance, 45000);
 
-      expect(result.currentValue).toBe(45000)
-      expect(result.unrealizedPnL).toBeNull()
-      expect(result.realizedPnL).toBe(500)
-      expect(result.totalPnL).toBe(500)
-    })
-  })
+      expect(result.currentValue).toBe(45000);
+      expect(result.unrealizedPnL).toBeNull();
+      expect(result.realizedPnL).toBe(500);
+      expect(result.totalPnL).toBe(500);
+    });
+  });
 
   describe("calculateFIFOCostBasis", () => {
     it("should calculate FIFO cost basis correctly", () => {
@@ -152,14 +152,14 @@ describe("Portfolio Calculations", () => {
           totalValue: null,
           createdAt: new Date("2023-01-03"),
         },
-      ]
+      ];
 
-      const result = calculateFIFOCostBasis(transactions)
+      const result = calculateFIFOCostBasis(transactions);
 
-      expect(result.remainingQuantity).toBe(1.5)
-      expect(result.averageCost).toBeCloseTo(43333.33, 2) // (40000*0.5 + 50000*1) / 1.5
-      expect(result.realizedPnL).toBe(10000) // (60000 - 40000) * 0.5
-    })
+      expect(result.remainingQuantity).toBe(1.5);
+      expect(result.averageCost).toBeCloseTo(43333.33, 2); // (40000*0.5 + 50000*1) / 1.5
+      expect(result.realizedPnL).toBe(10000); // (60000 - 40000) * 0.5
+    });
 
     it("should handle complex transaction sequences", () => {
       const transactions: NumericTransaction[] = [
@@ -190,14 +190,14 @@ describe("Portfolio Calculations", () => {
           totalValue: null,
           createdAt: new Date("2023-01-03"),
         },
-      ]
+      ];
 
-      const result = calculateFIFOCostBasis(transactions)
+      const result = calculateFIFOCostBasis(transactions);
 
-      expect(result.remainingQuantity).toBe(10)
-      expect(result.averageCost).toBe(2500) // (2000*5 + 3000*5) / 10
-      expect(result.realizedPnL).toBe(2500) // (2500 - 2000) * 5
-    })
+      expect(result.remainingQuantity).toBe(10);
+      expect(result.averageCost).toBe(2500); // (2000*5 + 3000*5) / 10
+      expect(result.realizedPnL).toBe(2500); // (2500 - 2000) * 5
+    });
 
     it("should handle deposits and withdrawals", () => {
       const transactions: NumericTransaction[] = [
@@ -219,67 +219,67 @@ describe("Portfolio Calculations", () => {
           totalValue: null,
           createdAt: new Date("2023-01-02"),
         },
-      ]
+      ];
 
-      const result = calculateFIFOCostBasis(transactions)
+      const result = calculateFIFOCostBasis(transactions);
 
-      expect(result.remainingQuantity).toBe(500)
-      expect(result.averageCost).toBe(1)
-      expect(result.realizedPnL).toBe(0) // No gain/loss on stablecoin
-    })
-  })
+      expect(result.remainingQuantity).toBe(500);
+      expect(result.averageCost).toBe(1);
+      expect(result.realizedPnL).toBe(0); // No gain/loss on stablecoin
+    });
+  });
 
   describe("calculatePerformanceMetrics", () => {
     it("should calculate performance metrics correctly", () => {
-      const result = calculatePerformanceMetrics(110000, 100000, "day")
+      const result = calculatePerformanceMetrics(110000, 100000, "day");
 
-      expect(result.absoluteChange).toBe(10000)
-      expect(result.percentageChange).toBe(10)
-    })
+      expect(result.absoluteChange).toBe(10000);
+      expect(result.percentageChange).toBe(10);
+    });
 
     it("should handle zero previous value", () => {
-      const result = calculatePerformanceMetrics(50000, 0, "day")
+      const result = calculatePerformanceMetrics(50000, 0, "day");
 
-      expect(result.absoluteChange).toBe(50000)
-      expect(result.percentageChange).toBe(0)
-    })
+      expect(result.absoluteChange).toBe(50000);
+      expect(result.percentageChange).toBe(0);
+    });
 
     it("should handle negative performance", () => {
-      const result = calculatePerformanceMetrics(90000, 100000, "day")
+      const result = calculatePerformanceMetrics(90000, 100000, "day");
 
-      expect(result.absoluteChange).toBe(-10000)
-      expect(result.percentageChange).toBe(-10)
-    })
-  })
+      expect(result.absoluteChange).toBe(-10000);
+      expect(result.percentageChange).toBe(-10);
+    });
+  });
 
   describe("calculateSharpeRatio", () => {
     it("should calculate Sharpe ratio correctly", () => {
-      const returns = [0.01, 0.02, -0.01, 0.03, 0.005, -0.015, 0.025]
-      const result = calculateSharpeRatio(returns, 0.02)
+      const returns = [0.01, 0.02, -0.01, 0.03, 0.005, -0.015, 0.025];
+      const result = calculateSharpeRatio(returns, 0.02);
 
-      expect(result).toBeGreaterThan(0)
-      expect(result).toBeLessThan(5) // Reasonable range for Sharpe ratio
-    })
+      expect(result).toBeGreaterThan(0);
+      expect(result).toBeLessThan(5); // Reasonable range for Sharpe ratio
+    });
 
     it("should handle empty returns array", () => {
-      const result = calculateSharpeRatio([])
+      const result = calculateSharpeRatio([]);
 
-      expect(result).toBe(0)
-    })
+      expect(result).toBe(0);
+    });
 
     it("should handle single return", () => {
-      const result = calculateSharpeRatio([0.05])
+      const result = calculateSharpeRatio([0.05]);
 
-      expect(result).toBe(0)
-    })
+      expect(result).toBe(0);
+    });
 
     it("should handle zero volatility", () => {
-      const returns = [0.01, 0.01, 0.01, 0.01] // No volatility
-      const result = calculateSharpeRatio(returns)
+      const returns = [0.01, 0.01, 0.01, 0.01]; // No volatility
+      const result = calculateSharpeRatio(returns);
 
-      expect(result).toBe(0)
-    })
-  })
+      expect(result).toBe(0);
+    });
+  });
 
   describe("calculateDiversificationScore", () => {
     it("should calculate diversification score for balanced portfolio", () => {
@@ -288,36 +288,38 @@ describe("Portfolio Calculations", () => {
         { asset: "ETH", value: 25000, percentage: 25, color: "#8b5cf6" },
         { asset: "ADA", value: 25000, percentage: 25, color: "#06b6d4" },
         { asset: "XLM", value: 25000, percentage: 25, color: "#14b8a6" },
-      ]
+      ];
 
-      const result = calculateDiversificationScore(allocation)
+      const result = calculateDiversificationScore(allocation);
 
-      expect(result).toBeCloseTo(100, 0) // Perfectly diversified
-    })
+      expect(result).toBeCloseTo(100, 0); // Perfectly diversified
+    });
 
     it("should calculate diversification score for concentrated portfolio", () => {
       const allocation = [
         { asset: "BTC", value: 90000, percentage: 90, color: "#f59e0b" },
         { asset: "ETH", value: 10000, percentage: 10, color: "#8b5cf6" },
-      ]
+      ];
 
-      const result = calculateDiversificationScore(allocation)
+      const result = calculateDiversificationScore(allocation);
 
-      expect(result).toBeLessThan(50) // Poorly diversified
-    })
+      expect(result).toBeLessThan(50); // Poorly diversified
+    });
 
     it("should handle single asset portfolio", () => {
-      const allocation = [{ asset: "BTC", value: 100000, percentage: 100, color: "#f59e0b" }]
+      const allocation = [
+        { asset: "BTC", value: 100000, percentage: 100, color: "#f59e0b" },
+      ];
 
-      const result = calculateDiversificationScore(allocation)
+      const result = calculateDiversificationScore(allocation);
 
-      expect(result).toBe(0) // No diversification
-    })
+      expect(result).toBe(0); // No diversification
+    });
 
     it("should handle empty allocation", () => {
-      const result = calculateDiversificationScore([])
+      const result = calculateDiversificationScore([]);
 
-      expect(result).toBe(0)
-    })
-  })
-})
+      expect(result).toBe(0);
+    });
+  });
+});

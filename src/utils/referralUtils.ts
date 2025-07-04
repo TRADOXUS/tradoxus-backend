@@ -8,7 +8,9 @@ export class ReferralCodeGenerator {
   static generate(): string {
     let result = "";
     for (let i = 0; i < this.CODE_LENGTH; i++) {
-      result += this.CHARS.charAt(Math.floor(Math.random() * this.CHARS.length));
+      result += this.CHARS.charAt(
+        Math.floor(Math.random() * this.CHARS.length),
+      );
     }
     return result;
   }
@@ -51,7 +53,7 @@ export class ReferralValidator {
   static canUserApplyCode(
     referralCode: ReferralCode,
     userId: string,
-    existingReferral?: Referral
+    existingReferral?: Referral,
   ): { canApply: boolean; reason?: string } {
     // Check if user is trying to self-refer
     if (referralCode.userId === userId) {
@@ -98,12 +100,12 @@ export class ReferralRewardCalculator {
     pendingRewards: number;
   } {
     const completedReferrals = referrals.filter(
-      (r) => r.status === ReferralStatus.COMPLETED
+      (r) => r.status === ReferralStatus.COMPLETED,
     );
 
     const totalEarned = completedReferrals.reduce(
       (sum, r) => sum + (r.rewardEarnedReferrer?.value || 0),
-      0
+      0,
     );
 
     const totalClaimed = completedReferrals
@@ -119,14 +121,14 @@ export class ReferralRewardCalculator {
 export class ReferralAnalytics {
   static calculateConversionRate(
     totalReferrals: number,
-    completedReferrals: number
+    completedReferrals: number,
   ): number {
     return totalReferrals > 0 ? (completedReferrals / totalReferrals) * 100 : 0;
   }
 
   static categorizeByPeriod(
     referrals: Referral[],
-    periodDays: number = 30
+    periodDays: number = 30,
   ): {
     recent: Referral[];
     older: Referral[];
@@ -142,14 +144,14 @@ export class ReferralAnalytics {
 
   static calculateCodePerformance(
     code: ReferralCode,
-    associatedReferrals: Referral[]
+    associatedReferrals: Referral[],
   ): {
     usageCount: number;
     completionRate: number;
     averageTimeToComplete: number; // in hours
   } {
     const completedReferrals = associatedReferrals.filter(
-      (r) => r.status === ReferralStatus.COMPLETED && r.completedAt
+      (r) => r.status === ReferralStatus.COMPLETED && r.completedAt,
     );
 
     const completionRate =
@@ -176,7 +178,7 @@ export class ReferralAnalytics {
 
   static groupByTimeFrame(
     referrals: Referral[],
-    timeFrame: "day" | "week" | "month" = "day"
+    timeFrame: "day" | "week" | "month" = "day",
   ): Array<{ period: string; total: number; completed: number }> {
     const groups = new Map<string, { total: number; completed: number }>();
 
@@ -288,26 +290,28 @@ export class ReferralConfig {
 
   static getReferrerRewardPoints(): number {
     return parseInt(
-      process.env.REFERRER_REWARD_POINTS || String(this.DEFAULT_REFERRER_POINTS)
+      process.env.REFERRER_REWARD_POINTS ||
+        String(this.DEFAULT_REFERRER_POINTS),
     );
   }
 
   static getReferredRewardPoints(): number {
     return parseInt(
-      process.env.REFERRED_REWARD_POINTS || String(this.DEFAULT_REFERRED_POINTS)
+      process.env.REFERRED_REWARD_POINTS ||
+        String(this.DEFAULT_REFERRED_POINTS),
     );
   }
 
   static getMaxUsagePerCode(): number {
     return parseInt(
-      process.env.REFERRAL_MAX_USAGE || String(this.DEFAULT_MAX_USAGE)
+      process.env.REFERRAL_MAX_USAGE || String(this.DEFAULT_MAX_USAGE),
     );
   }
 
   static getExpiryDate(): Date {
     const date = new Date();
     const expiryDays = parseInt(
-      process.env.REFERRAL_EXPIRY_DAYS || String(this.DEFAULT_EXPIRY_DAYS)
+      process.env.REFERRAL_EXPIRY_DAYS || String(this.DEFAULT_EXPIRY_DAYS),
     );
     date.setDate(date.getDate() + expiryDays);
     return date;
@@ -315,7 +319,7 @@ export class ReferralConfig {
 
   static getCodeMinAge(): number {
     return parseInt(
-      process.env.REFERRAL_CODE_MIN_AGE_MS || String(this.CODE_MIN_AGE_MS)
+      process.env.REFERRAL_CODE_MIN_AGE_MS || String(this.CODE_MIN_AGE_MS),
     );
   }
-} 
+}

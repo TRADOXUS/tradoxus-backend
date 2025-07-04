@@ -1,24 +1,51 @@
-import { 
-  IsString, 
-  IsNotEmpty, 
-  Length, 
-  IsOptional, 
-  IsUUID, 
-  IsEnum, 
-  IsNumber, 
-  Min, 
-  Max, 
+import {
+  IsString,
+  IsNotEmpty,
+  Length,
+  IsOptional,
+  IsUUID,
+  IsEnum,
+  IsNumber,
+  Min,
+  Max,
   IsBoolean,
   Matches,
   IsDateString,
-  ValidateIf
 } from "class-validator";
+
+// Interfaces for type safety
+export interface ReferralReward {
+  type: "POINTS" | "DISCOUNT" | "PREMIUM_ACCESS" | "COURSE_ACCESS";
+  value: number;
+  description: string;
+}
+
+export interface ReferralMetadata {
+  completionTrigger?: string;
+  referrerPoints?: number;
+  referredPoints?: number;
+  notes?: string;
+  adminId?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export interface TopReferrerUser {
+  id: string;
+  email: string | null;
+  firstName?: string;
+  lastName?: string;
+  nickname: string | null;
+  walletAddress: string | null;
+}
 
 export class ApplyReferralCodeDto {
   @IsString()
   @IsNotEmpty()
   @Length(6, 20)
-  @Matches(/^[A-Z0-9]+$/, { message: 'Code must contain only uppercase letters and numbers' })
+  @Matches(/^[A-Z0-9]+$/, {
+    message: "Code must contain only uppercase letters and numbers",
+  })
   code: string;
 }
 
@@ -61,7 +88,9 @@ export class GenerateReferralCodeDto {
   @IsString()
   @IsOptional()
   @Length(8, 20)
-  @Matches(/^[A-Z0-9]+$/, { message: 'Custom code must contain only uppercase letters and numbers' })
+  @Matches(/^[A-Z0-9]+$/, {
+    message: "Custom code must contain only uppercase letters and numbers",
+  })
   customCode?: string;
 }
 
@@ -83,7 +112,9 @@ export class UpdateReferralCodeDto {
 export class ReferralAnalyticsQueryDto {
   @IsString()
   @IsOptional()
-  @Matches(/^(7d|30d|90d|1y)$/, { message: 'Period must be 7d, 30d, 90d, or 1y' })
+  @Matches(/^(7d|30d|90d|1y)$/, {
+    message: "Period must be 7d, 30d, 90d, or 1y",
+  })
   period?: string = "30d";
 
   @IsEnum(["day", "week", "month"])
@@ -204,12 +235,12 @@ export class ReferralResponseDto {
   referredUserId: string;
   referralCodeUsed: string;
   status: string;
-  rewardEarnedReferrer: any;
-  rewardEarnedReferred: any;
+  rewardEarnedReferrer: ReferralReward | null;
+  rewardEarnedReferred: ReferralReward | null;
   referrerRewardClaimed: boolean;
   referredRewardClaimed: boolean;
   completedAt: Date | null;
-  metadata: any;
+  metadata: ReferralMetadata | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -223,7 +254,7 @@ export class ReferralStatsResponseDto {
   topReferrers: Array<{
     userId: string;
     referralCount: number;
-    user: any;
+    user: TopReferrerUser;
   }>;
   recentActivity: Array<{
     date: string;
