@@ -1,11 +1,39 @@
 import { Request, Response, NextFunction } from "express";
 
+// Type definitions for error handling
+export interface ErrorDetails {
+  field?: string;
+  value?: unknown;
+  constraint?: string;
+  table?: string;
+  column?: string;
+  resource?: string;
+  id?: string;
+  conflictingField?: string;
+  constraints?: Record<string, string>;
+  stack?: string;
+}
+
+export interface QueryError extends Error {
+  code: string;
+  constraint?: string;
+  table?: string;
+  column?: string;
+  detail?: string;
+}
+
+export interface ValidationErrorDetails {
+  property: string;
+  constraints: Record<string, string>;
+  value: unknown;
+}
+
 export class AppError extends Error {
   constructor(
     public statusCode: number,
     public message: string,
     public code?: string,
-    public details?: any
+    public details?: ErrorDetails,
   ) {
     super(message);
     this.name = "AppError";
@@ -19,18 +47,14 @@ export class ReferralError extends AppError {
     statusCode: number,
     message: string,
     code: string,
-    details?: any
+    details?: ErrorDetails,
   ) {
     super(statusCode, message, `REFERRAL_${code}`, details);
   }
 }
 
 export class ValidationError extends AppError {
-  constructor(
-    message: string,
-    field?: string,
-    value?: any
-  ) {
+  constructor(message: string, field?: string, value?: unknown) {
     super(400, message, "VALIDATION_ERROR", { field, value });
   }
 }
@@ -49,7 +73,9 @@ export class AuthorizationError extends AppError {
 
 export class NotFoundError extends AppError {
   constructor(resource: string, id?: string) {
-    const message = id ? `${resource} with ID ${id} not found` : `${resource} not found`;
+    const message = id
+      ? `${resource} with ID ${id} not found`
+      : `${resource} not found`;
     super(404, message, "NOT_FOUND_ERROR", { resource, id });
   }
 }
@@ -73,7 +99,7 @@ interface ErrorResponse {
     code: string;
     message: string;
     statusCode: number;
-    details?: any;
+    details?: ErrorDetails;
     timestamp: string;
     path: string;
   };
@@ -92,11 +118,12 @@ export const errorHandler = (
     path: req.path,
     method: req.method,
     ip: req.ip,
-    userAgent: req.get('User-Agent'),
+    userAgent: req.get("User-Agent"),
   });
 
-  const requestId = req.headers['x-request-id'] as string || 
-                   Math.random().toString(36).substr(2, 9);
+  const requestId =
+    (req.headers["x-request-id"] as string) ||
+    Math.random().toString(36).substr(2, 9);
 
   // Enhanced AppError handling
   if (err instanceof AppError) {
@@ -118,10 +145,10 @@ export const errorHandler = (
 
   // TypeORM validation error
   if (err.name === "QueryFailedError") {
-    const queryError = err as any;
+    const queryError = err as QueryError;
     let message = "Database error";
     let code = "DATABASE_ERROR";
-    
+
     // Handle specific PostgreSQL errors
     if (queryError.code === "23505") {
       message = "Resource already exists";
@@ -140,11 +167,14 @@ export const errorHandler = (
         code,
         message,
         statusCode: 400,
-        details: process.env.NODE_ENV === 'development' ? {
-          constraint: queryError.constraint,
-          table: queryError.table,
-          column: queryError.column,
-        } : undefined,
+        details:
+          process.env.NODE_ENV === "development"
+            ? {
+                constraint: queryError.constraint,
+                table: queryError.table,
+                column: queryError.column,
+              }
+            : undefined,
         timestamp: new Date().toISOString(),
         path: req.path,
       },
@@ -188,8 +218,8 @@ export const errorHandler = (
   }
 
   // Class-validator errors
-  if (err.name === "ValidationError" || (err as any).constraints) {
-    const validationError = err as any;
+  if (err.name === "ValidationError" || "constraints" in err) {
+    const validationError = err as unknown as ValidationErrorDetails;
     const errorResponse: ErrorResponse = {
       status: "error",
       error: {
@@ -215,13 +245,17 @@ export const errorHandler = (
     status: "error",
     error: {
       code: "INTERNAL_SERVER_ERROR",
-      message: process.env.NODE_ENV === 'production' 
-        ? "Internal server error" 
-        : err.message,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Internal server error"
+          : err.message,
       statusCode: 500,
-      details: process.env.NODE_ENV === 'development' ? {
-        stack: err.stack,
-      } : undefined,
+      details:
+        process.env.NODE_ENV === "development"
+          ? {
+              stack: err.stack,
+            }
+          : undefined,
       timestamp: new Date().toISOString(),
       path: req.path,
     },
@@ -233,14 +267,43 @@ export const errorHandler = (
 
 // Utility functions for creating specific errors
 export const createReferralError = {
-  codeInvalid: () => new ReferralError(400, "Invalid or expired referral code", "CODE_INVALID"),
-  codeExpired: () => new ReferralError(400, "Referral code has expired", "CODE_EXPIRED"),
-  usageLimit: () => new ReferralError(400, "Referral code usage limit reached", "USAGE_LIMIT_REACHED"),
-  selfReferral: () => new ReferralError(400, "Cannot use your own referral code", "SELF_REFERRAL_FORBIDDEN"),
-  alreadyUsed: () => new ReferralError(400, "User has already used a referral code", "ALREADY_USED"),
-  codeTooNew: () => new ReferralError(400, "Referral code must age 1 minute before use", "CODE_TOO_NEW"),
+  codeInvalid: () =>
+    new ReferralError(400, "Invalid or expired referral code", "CODE_INVALID"),
+  codeExpired: () =>
+    new ReferralError(400, "Referral code has expired", "CODE_EXPIRED"),
+  usageLimit: () =>
+    new ReferralError(
+      400,
+      "Referral code usage limit reached",
+      "USAGE_LIMIT_REACHED",
+    ),
+  selfReferral: () =>
+    new ReferralError(
+      400,
+      "Cannot use your own referral code",
+      "SELF_REFERRAL_FORBIDDEN",
+    ),
+  alreadyUsed: () =>
+    new ReferralError(
+      400,
+      "User has already used a referral code",
+      "ALREADY_USED",
+    ),
+  codeTooNew: () =>
+    new ReferralError(
+      400,
+      "Referral code must age 1 minute before use",
+      "CODE_TOO_NEW",
+    ),
   notFound: () => new ReferralError(404, "Referral not found", "NOT_FOUND"),
-  notPending: () => new ReferralError(400, "Referral is not in pending status", "NOT_PENDING"),
-  codeNotFound: () => new ReferralError(404, "Referral code not found", "CODE_NOT_FOUND"),
-  generationFailed: () => new ReferralError(500, "Failed to generate unique referral code", "GENERATION_FAILED"),
+  notPending: () =>
+    new ReferralError(400, "Referral is not in pending status", "NOT_PENDING"),
+  codeNotFound: () =>
+    new ReferralError(404, "Referral code not found", "CODE_NOT_FOUND"),
+  generationFailed: () =>
+    new ReferralError(
+      500,
+      "Failed to generate unique referral code",
+      "GENERATION_FAILED",
+    ),
 };

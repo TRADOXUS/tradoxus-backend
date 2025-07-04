@@ -4,14 +4,94 @@ import { ReferralCode } from "../entities/ReferralCode";
 import { Referral, ReferralStatus, RewardType } from "../entities/Referral";
 import { User } from "../entities/User";
 import { AppDataSource } from "../config/database";
-import { AppError, createReferralError } from "../middleware/errorHandler";
+import { createReferralError } from "../middleware/errorHandler";
+
+// Type definitions for service responses
+export interface PerformanceMetrics {
+  period: { start: Date; end: Date };
+  groupBy: string;
+  metrics: Array<{
+    date: string;
+    referrals: number;
+    completions: number;
+    conversionRate: number;
+  }>;
+}
+
+export interface LeaderboardResponse {
+  period: string;
+  metric: string;
+  leaders: Array<{
+    userId: string;
+    referralCount: number;
+    conversionRate: number;
+    user: User;
+  }>;
+}
+
+export interface CohortAnalysis {
+  cohortType: string;
+  cohorts: Array<{
+    cohortDate: string;
+    totalUsers: number;
+    completedReferrals: number;
+    retentionRate: number;
+  }>;
+}
+
+export interface CodePerformanceAnalytics {
+  items: Array<{
+    id: string;
+    code: string;
+    usageCount: number;
+    completionRate: number;
+    createdAt: Date;
+    isActive: boolean;
+  }>;
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface ExportFilters {
+  startDate?: Date;
+  endDate?: Date;
+  status?: string;
+}
+
+export interface ExportData {
+  data: Array<Record<string, unknown>>;
+  metadata?: {
+    totalRecords: number;
+    exportDate: Date;
+    filters: ExportFilters;
+  };
+}
+
+export interface RealTimeStatistics {
+  totalReferrals: number;
+  completedReferrals: number;
+  pendingReferrals: number;
+  totalRewardsDistributed: number;
+  conversionRate: number;
+  topReferrers: Array<{
+    userId: string;
+    referralCount: number;
+    user: User;
+  }>;
+  realTimeMetrics: {
+    activeUsers: number;
+    recentSignups: number;
+    pendingRewards: number;
+  };
+}
 
 // Configuration constants
 const REFERRER_REWARD_POINTS = parseInt(
-  process.env.REFERRER_REWARD_POINTS || "100"
+  process.env.REFERRER_REWARD_POINTS || "100",
 );
 const REFERRED_REWARD_POINTS = parseInt(
-  process.env.REFERRED_REWARD_POINTS || "50"
+  process.env.REFERRED_REWARD_POINTS || "50",
 );
 
 export class ReferralService extends BaseService<ReferralCode> {
@@ -32,16 +112,6 @@ export class ReferralService extends BaseService<ReferralCode> {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
-  }
-
-  // Private helper method for atomic usage count increment
-  private async incrementUsageCount(codeId: string): Promise<void> {
-    await this.repository
-      .createQueryBuilder()
-      .update(ReferralCode)
-      .set({ usageCount: () => "usageCount + 1" })
-      .where("id = :id", { id: codeId })
-      .execute();
   }
 
   // Generate referral code for user
@@ -102,7 +172,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Validate and apply referral code with transaction safety
   async applyReferralCode(
     referredUserId: string,
-    code: string
+    code: string,
   ): Promise<Referral> {
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
@@ -145,7 +215,8 @@ export class ReferralService extends BaseService<ReferralCode> {
 
       // Check if referral code was created recently (business rule validation)
       const codeAge = new Date().getTime() - referralCode.createdAt.getTime();
-      if (codeAge < 60000) { // 1 minute
+      if (codeAge < 60000) {
+        // 1 minute
         throw createReferralError.codeTooNew();
       }
 
@@ -190,7 +261,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Complete referral (when referred user meets criteria)
   async completeReferral(
     referralId: string,
-    completionTrigger: string = "profile_completed"
+    completionTrigger: string = "profile_completed",
   ): Promise<Referral> {
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
@@ -266,7 +337,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Admin: Get all referrals with pagination
   async getAllReferrals(
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<{
     items: Referral[];
     total: number;
@@ -284,7 +355,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Admin: Manually complete referral
   async adminCompleteReferral(
     referralId: string,
-    adminNotes?: string
+    adminNotes?: string,
   ): Promise<Referral> {
     const referral = await this.completeReferral(referralId, "admin_override");
 
@@ -340,11 +411,12 @@ export class ReferralService extends BaseService<ReferralCode> {
         sum +
         (r.rewardEarnedReferrer?.value || 0) +
         (r.rewardEarnedReferred?.value || 0),
-      0
+      0,
     );
 
     // Calculate conversion rate
-    const conversionRate = totalReferrals > 0 ? (completedReferrals / totalReferrals) * 100 : 0;
+    const conversionRate =
+      totalReferrals > 0 ? (completedReferrals / totalReferrals) * 100 : 0;
 
     // Get top referrers
     const topReferrersQuery = await this.referralRepo
@@ -371,13 +443,13 @@ export class ReferralService extends BaseService<ReferralCode> {
             referralCount: parseInt(item.referralCount),
             user: user,
           };
-        })
+        }),
       )
     ).filter(
       (
-        result
+        result,
       ): result is { userId: string; referralCount: number; user: User } =>
-        result !== null
+        result !== null,
     );
 
     return {
@@ -401,9 +473,12 @@ export class ReferralService extends BaseService<ReferralCode> {
     }>;
   }> {
     // Parse period (30d, 7d, 1y)
-    const days = period.endsWith('d') ? parseInt(period) : 
-                 period.endsWith('y') ? parseInt(period) * 365 : 30;
-    
+    const days = period.endsWith("d")
+      ? parseInt(period)
+      : period.endsWith("y")
+        ? parseInt(period) * 365
+        : 30;
+
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
@@ -412,22 +487,29 @@ export class ReferralService extends BaseService<ReferralCode> {
       .createQueryBuilder("referral")
       .select("DATE(referral.createdAt)", "date")
       .addSelect("COUNT(*)", "count")
-      .addSelect("SUM(CASE WHEN referral.status = 'COMPLETED' THEN 1 ELSE 0 END)", "completed")
+      .addSelect(
+        "SUM(CASE WHEN referral.status = 'COMPLETED' THEN 1 ELSE 0 END)",
+        "completed",
+      )
       .where("referral.createdAt >= :startDate", { startDate })
       .groupBy("DATE(referral.createdAt)")
       .orderBy("date", "ASC")
       .getRawMany();
 
-    const dailyReferrals = dailyData.map(row => ({
+    const dailyReferrals = dailyData.map((row) => ({
       date: row.date,
       count: parseInt(row.count),
-      completed: parseInt(row.completed)
+      completed: parseInt(row.completed),
     }));
 
     // Calculate overall conversion rate for the period
     const totalCount = dailyReferrals.reduce((sum, day) => sum + day.count, 0);
-    const totalCompleted = dailyReferrals.reduce((sum, day) => sum + day.completed, 0);
-    const conversionRate = totalCount > 0 ? (totalCompleted / totalCount) * 100 : 0;
+    const totalCompleted = dailyReferrals.reduce(
+      (sum, day) => sum + day.completed,
+      0,
+    );
+    const conversionRate =
+      totalCount > 0 ? (totalCompleted / totalCount) * 100 : 0;
 
     // Get top performing codes
     const topCodes = await this.repository
@@ -435,17 +517,23 @@ export class ReferralService extends BaseService<ReferralCode> {
       .leftJoin("referrals", "r", "r.referralCodeUsed = code.code")
       .select("code.code", "code")
       .addSelect("code.usageCount", "usageCount")
-      .addSelect("COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END)", "completedCount")
+      .addSelect(
+        "COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END)",
+        "completedCount",
+      )
       .where("code.usageCount > 0")
       .groupBy("code.code, code.usageCount")
       .orderBy("code.usageCount", "DESC")
       .limit(10)
       .getRawMany();
 
-    const topPerformingCodes = topCodes.map(row => ({
+    const topPerformingCodes = topCodes.map((row) => ({
       code: row.code,
       usageCount: parseInt(row.usageCount),
-      completionRate: row.usageCount > 0 ? (parseInt(row.completedCount) / parseInt(row.usageCount)) * 100 : 0
+      completionRate:
+        row.usageCount > 0
+          ? (parseInt(row.completedCount) / parseInt(row.usageCount)) * 100
+          : 0,
     }));
 
     return {
@@ -459,8 +547,8 @@ export class ReferralService extends BaseService<ReferralCode> {
   async getPerformanceMetrics(
     startDate: Date,
     groupBy: string = "day",
-    includeInactive: boolean = false
-  ): Promise<any> {
+    includeInactive: boolean = false,
+  ): Promise<PerformanceMetrics> {
     // Implementation placeholder - would include detailed performance metrics
     return {
       period: { start: startDate, end: new Date() },
@@ -472,8 +560,8 @@ export class ReferralService extends BaseService<ReferralCode> {
   async getLeaderboard(
     period: string = "30d",
     limit: number = 10,
-    metric: string = "referrals"
-  ): Promise<any> {
+    metric: string = "referrals",
+  ): Promise<LeaderboardResponse> {
     // Implementation placeholder - would include leaderboard data
     return {
       period,
@@ -485,8 +573,8 @@ export class ReferralService extends BaseService<ReferralCode> {
   async getCohortAnalysis(
     startDate?: Date,
     endDate?: Date,
-    cohortType: string = "monthly"
-  ): Promise<any> {
+    cohortType: string = "monthly",
+  ): Promise<CohortAnalysis> {
     // Implementation placeholder - would include cohort analysis
     return {
       cohortType,
@@ -499,8 +587,8 @@ export class ReferralService extends BaseService<ReferralCode> {
     limit: number = 20,
     sortBy: string = "usageCount",
     sortOrder: string = "DESC",
-    includeInactive: boolean = false
-  ): Promise<any> {
+    includeInactive: boolean = false,
+  ): Promise<CodePerformanceAnalytics> {
     // Implementation placeholder - would include code performance data
     return {
       items: [],
@@ -515,22 +603,22 @@ export class ReferralService extends BaseService<ReferralCode> {
     action: string,
     adminId: string,
     reason?: string,
-    notifyUsers: boolean = false
+    notifyUsers: boolean = false,
   ): Promise<Array<{ id: string; success: boolean; error?: string }>> {
     // Implementation placeholder - would handle bulk operations
-    return referralIds.map(id => ({ id, success: true }));
+    return referralIds.map((id) => ({ id, success: true }));
   }
 
   async exportData(
     type: string,
     format: string,
-    filters: any
-  ): Promise<any> {
+    filters: ExportFilters,
+  ): Promise<string | ExportData> {
     // Implementation placeholder - would handle data export
     return format === "csv" ? "CSV data" : { data: [] };
   }
 
-  async getRealTimeStatistics(): Promise<any> {
+  async getRealTimeStatistics(): Promise<RealTimeStatistics> {
     // Implementation placeholder - would include real-time stats
     const basic = await this.getReferralStatistics();
     return {

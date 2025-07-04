@@ -91,7 +91,9 @@ router.get(
   "/admin/performance",
   authenticate,
   requireAdmin,
-  asyncHandler((req, res) => referralController.getPerformanceMetrics(req, res)),
+  asyncHandler((req, res) =>
+    referralController.getPerformanceMetrics(req, res),
+  ),
 );
 
 router.get(

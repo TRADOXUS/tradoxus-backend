@@ -10,7 +10,7 @@ describe("Referral System Integration Tests", () => {
   let userRepository: any;
   let referralCodeRepository: any;
   let referralRepository: any;
-  
+
   let referrerUser: User;
   let referredUser: User;
   let referrerToken: string;
@@ -20,7 +20,7 @@ describe("Referral System Integration Tests", () => {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    
+
     userRepository = AppDataSource.getRepository(User);
     referralCodeRepository = AppDataSource.getRepository(ReferralCode);
     referralRepository = AppDataSource.getRepository(Referral);
@@ -53,13 +53,13 @@ describe("Referral System Integration Tests", () => {
     referrerToken = jwt.sign(
       { userId: referrerUser.id },
       process.env.JWT_SECRET || "test-secret",
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     referredToken = jwt.sign(
       { userId: referredUser.id },
       process.env.JWT_SECRET || "test-secret",
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
   });
 
@@ -110,7 +110,9 @@ describe("Referral System Integration Tests", () => {
         .expect(200);
 
       expect(referrerStatusResponse.body.data.referralsMade).toHaveLength(1);
-      expect(referrerStatusResponse.body.data.referralsMade[0].status).toBe("PENDING");
+      expect(referrerStatusResponse.body.data.referralsMade[0].status).toBe(
+        "PENDING",
+      );
 
       const referredStatusResponse = await request(app)
         .get("/api/v1/referral/status")
@@ -118,7 +120,9 @@ describe("Referral System Integration Tests", () => {
         .expect(200);
 
       expect(referredStatusResponse.body.data.referralReceived).toBeDefined();
-      expect(referredStatusResponse.body.data.referralReceived.status).toBe("PENDING");
+      expect(referredStatusResponse.body.data.referralReceived.status).toBe(
+        "PENDING",
+      );
 
       // Step 5: Complete the referral (simulate profile completion)
       const completeResponse = await request(app)
@@ -136,8 +140,12 @@ describe("Referral System Integration Tests", () => {
         .set("Authorization", `Bearer ${referrerToken}`)
         .expect(200);
 
-      expect(finalReferrerStatus.body.data.referralsMade[0].status).toBe("COMPLETED");
-      expect(finalReferrerStatus.body.data.totalRewardsEarned).toBeGreaterThan(0);
+      expect(finalReferrerStatus.body.data.referralsMade[0].status).toBe(
+        "COMPLETED",
+      );
+      expect(finalReferrerStatus.body.data.totalRewardsEarned).toBeGreaterThan(
+        0,
+      );
     });
 
     it("should prevent duplicate referral code usage", async () => {
@@ -182,7 +190,9 @@ describe("Referral System Integration Tests", () => {
         .send({ code: referralCode })
         .expect(400);
 
-      expect(applyResponse.body.error.code).toBe("REFERRAL_SELF_REFERRAL_FORBIDDEN");
+      expect(applyResponse.body.error.code).toBe(
+        "REFERRAL_SELF_REFERRAL_FORBIDDEN",
+      );
     });
 
     it("should handle expired referral codes", async () => {
@@ -226,7 +236,9 @@ describe("Referral System Integration Tests", () => {
         .send({ code: "LIMITED1" })
         .expect(400);
 
-      expect(applyResponse.body.error.code).toBe("REFERRAL_USAGE_LIMIT_REACHED");
+      expect(applyResponse.body.error.code).toBe(
+        "REFERRAL_USAGE_LIMIT_REACHED",
+      );
     });
 
     it("should enforce 1-minute age requirement for new codes", async () => {
@@ -271,7 +283,7 @@ describe("Referral System Integration Tests", () => {
       adminToken = jwt.sign(
         { userId: adminUser.id },
         process.env.JWT_SECRET || "test-secret",
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
       );
     });
 
@@ -316,7 +328,9 @@ describe("Referral System Integration Tests", () => {
         .expect(200);
 
       expect(completeResponse.body.data.status).toBe("COMPLETED");
-      expect(completeResponse.body.data.metadata.notes).toBe("Manually completed by admin");
+      expect(completeResponse.body.data.metadata.notes).toBe(
+        "Manually completed by admin",
+      );
     });
 
     it("should allow admin to view statistics", async () => {
@@ -341,7 +355,7 @@ describe("Referral System Integration Tests", () => {
 
       // Get the code ID from database
       const codeRecord = await referralCodeRepository.findOne({
-        where: { code: generateResponse.body.data.code }
+        where: { code: generateResponse.body.data.code },
       });
 
       // Deactivate code
@@ -375,22 +389,16 @@ describe("Referral System Integration Tests", () => {
 
   describe("Error Handling", () => {
     it("should require authentication for all endpoints", async () => {
-      await request(app)
-        .post("/api/v1/referral/generate-code")
-        .expect(401);
+      await request(app).post("/api/v1/referral/generate-code").expect(401);
 
-      await request(app)
-        .get("/api/v1/referral/my-code")
-        .expect(401);
+      await request(app).get("/api/v1/referral/my-code").expect(401);
 
       await request(app)
         .post("/api/v1/referral/apply-code")
         .send({ code: "TESTCODE" })
         .expect(401);
 
-      await request(app)
-        .get("/api/v1/referral/status")
-        .expect(401);
+      await request(app).get("/api/v1/referral/status").expect(401);
     });
 
     it("should validate input data", async () => {
@@ -441,16 +449,16 @@ describe("Referral System Integration Tests", () => {
 
   describe("Performance and Load", () => {
     it("should handle concurrent referral code generation", async () => {
-      const promises = Array.from({ length: 10 }, () => 
+      const promises = Array.from({ length: 10 }, () =>
         request(app)
           .post("/api/v1/referral/generate-code")
-          .set("Authorization", `Bearer ${referrerToken}`)
+          .set("Authorization", `Bearer ${referrerToken}`),
       );
 
       const responses = await Promise.all(promises);
-      
+
       // All should return the same code (existing code behavior)
-      const codes = responses.map(r => r.body.data.code);
+      const codes = responses.map((r) => r.body.data.code);
       expect(new Set(codes).size).toBe(1); // All should be the same code
     });
 
@@ -478,7 +486,7 @@ describe("Referral System Integration Tests", () => {
       const adminToken = jwt.sign(
         { userId: adminUser.id },
         process.env.JWT_SECRET || "test-secret",
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
       );
 
       // Test pagination
@@ -497,4 +505,4 @@ describe("Referral System Integration Tests", () => {
       expect(page2Response.body.data.items.length).toBeLessThanOrEqual(5);
     });
   });
-}); 
+});
