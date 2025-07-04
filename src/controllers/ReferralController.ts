@@ -33,7 +33,7 @@ export class ReferralController {
       }
       throw new AppError(
         500,
-        `Failed to generate referral code: ${err.message}`
+        `Failed to generate referral code: ${err.message}`,
       );
     }
   }
@@ -92,7 +92,7 @@ export class ReferralController {
 
       const referral = await this.referralService.applyReferralCode(
         userId,
-        code
+        code,
       );
       res.json({
         status: "success",
@@ -137,7 +137,7 @@ export class ReferralController {
 
       const referral = await this.referralService.completeReferral(
         referralId,
-        trigger
+        trigger,
       );
       res.json({
         status: "success",
@@ -158,7 +158,7 @@ export class ReferralController {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(
         100,
-        Math.max(1, parseInt(req.query.limit as string) || 10)
+        Math.max(1, parseInt(req.query.limit as string) || 10),
       );
 
       if (isNaN(page) || isNaN(limit)) {
@@ -186,7 +186,7 @@ export class ReferralController {
 
       const referral = await this.referralService.adminCompleteReferral(
         referralId,
-        notes
+        notes,
       );
       res.json({
         status: "success",

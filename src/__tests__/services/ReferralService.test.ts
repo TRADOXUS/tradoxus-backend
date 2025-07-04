@@ -118,7 +118,7 @@ describe("ReferralService", () => {
 
       const result = await referralService.applyReferralCode(
         "user2",
-        "TESTCODE"
+        "TESTCODE",
       );
 
       expect(result).toEqual(newReferral);
@@ -132,7 +132,7 @@ describe("ReferralService", () => {
       mockReferralCodeRepo.findOne.mockResolvedValue(null);
 
       await expect(
-        referralService.applyReferralCode("user2", "INVALID")
+        referralService.applyReferralCode("user2", "INVALID"),
       ).rejects.toThrow(AppError);
     });
 
@@ -150,7 +150,7 @@ describe("ReferralService", () => {
       mockReferralCodeRepo.findOne.mockResolvedValue(referralCode);
 
       await expect(
-        referralService.applyReferralCode("user1", "TESTCODE")
+        referralService.applyReferralCode("user1", "TESTCODE"),
       ).rejects.toThrow(AppError);
     });
 
@@ -168,7 +168,7 @@ describe("ReferralService", () => {
       mockReferralCodeRepo.findOne.mockResolvedValue(referralCode);
 
       await expect(
-        referralService.applyReferralCode("user2", "TESTCODE")
+        referralService.applyReferralCode("user2", "TESTCODE"),
       ).rejects.toThrow(AppError);
     });
   });
@@ -207,7 +207,7 @@ describe("ReferralService", () => {
       mockReferralRepo.findOne.mockResolvedValue(completedReferral);
 
       await expect(referralService.completeReferral("ref1")).rejects.toThrow(
-        AppError
+        AppError,
       );
     });
   });

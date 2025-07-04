@@ -6,7 +6,13 @@ import { User } from "../entities/User";
 import { AppDataSource } from "../config/database";
 import { AppError } from "../middleware/errorHandler";
 
-// Remove the unused ReferralReward import since it's defined in the entity file
+// Configuration constants
+const REFERRER_REWARD_POINTS = parseInt(
+  process.env.REFERRER_REWARD_POINTS || "100",
+);
+const REFERRED_REWARD_POINTS = parseInt(
+  process.env.REFERRED_REWARD_POINTS || "50",
+);
 
 export class ReferralService extends BaseService<ReferralCode> {
   private referralRepo: Repository<Referral>;
@@ -16,11 +22,6 @@ export class ReferralService extends BaseService<ReferralCode> {
     super(ReferralCode);
     this.referralRepo = AppDataSource.getRepository(Referral);
     this.userRepo = AppDataSource.getRepository(User);
-  }
-
-  // Make referralRepo public for external access if needed
-  public getReferralRepository(): Repository<Referral> {
-    return this.referralRepo;
   }
 
   // Generate unique referral code
@@ -44,30 +45,43 @@ export class ReferralService extends BaseService<ReferralCode> {
       return existingCode;
     }
 
-    // Generate unique code
-    let code: string;
-    let isUnique = false;
-
-    do {
-      code = this.generateReferralCode();
-      const existing = await this.repository.findOne({ where: { code } });
-      isUnique = !existing;
-    } while (!isUnique);
-
     // Set expiration to 1 year from now
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-    const referralCode = this.repository.create({
-      code,
-      userId,
-      isActive: true,
-      usageCount: 0,
-      maxUsage: 100,
-      expiresAt,
-    });
+    let attempts = 0;
+    const maxAttempts = 5;
 
-    return this.repository.save(referralCode);
+    while (attempts < maxAttempts) {
+      try {
+        const code = this.generateReferralCode();
+        const referralCode = this.repository.create({
+          code,
+          userId,
+          isActive: true,
+          usageCount: 0,
+          maxUsage: 100,
+          expiresAt,
+        });
+        return await this.repository.save(referralCode);
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "code" in error &&
+          (error as { code: string }).code === "23505"
+        ) {
+          // PostgreSQL unique violation
+          attempts++;
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw new AppError(
+      500,
+      "Failed to generate unique referral code after multiple attempts",
+    );
   }
 
   // Get user's referral code
@@ -81,7 +95,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Validate and apply referral code
   async applyReferralCode(
     referredUserId: string,
-    code: string
+    code: string,
   ): Promise<Referral> {
     // Find the referral code
     const referralCode = await this.repository.findOne({
@@ -125,22 +139,25 @@ export class ReferralService extends BaseService<ReferralCode> {
       status: ReferralStatus.PENDING,
       rewardEarnedReferrer: {
         type: RewardType.POINTS,
-        value: 100,
+        value: REFERRER_REWARD_POINTS,
         description: "Referral bonus for bringing a new user",
       },
       rewardEarnedReferred: {
         type: RewardType.POINTS,
-        value: 50,
+        value: REFERRED_REWARD_POINTS,
         description: "Welcome bonus for joining through referral",
       },
     });
 
     const savedReferral = await this.referralRepo.save(referral);
 
-    // Update referral code usage count
-    await this.repository.update(referralCode.id, {
-      usageCount: referralCode.usageCount + 1,
-    });
+    // Update referral code usage count atomically
+    await this.repository
+      .createQueryBuilder()
+      .update(ReferralCode)
+      .set({ usageCount: () => "usageCount + 1" })
+      .where("id = :id", { id: referralCode.id })
+      .execute();
 
     return savedReferral;
   }
@@ -148,7 +165,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Complete referral (when referred user meets criteria)
   async completeReferral(
     referralId: string,
-    completionTrigger: string = "profile_completed"
+    completionTrigger: string = "profile_completed",
   ): Promise<Referral> {
     const referral = await this.referralRepo.findOne({
       where: { id: referralId },
@@ -211,7 +228,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Admin: Get all referrals with pagination
   async getAllReferrals(
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<{
     items: Referral[];
     total: number;
@@ -229,7 +246,7 @@ export class ReferralService extends BaseService<ReferralCode> {
   // Admin: Manually complete referral
   async adminCompleteReferral(
     referralId: string,
-    adminNotes?: string
+    adminNotes?: string,
   ): Promise<Referral> {
     const referral = await this.completeReferral(referralId, "admin_override");
 
@@ -284,7 +301,7 @@ export class ReferralService extends BaseService<ReferralCode> {
         sum +
         (r.rewardEarnedReferrer?.value || 0) +
         (r.rewardEarnedReferred?.value || 0),
-      0
+      0,
     );
 
     // Get top referrers
@@ -312,13 +329,13 @@ export class ReferralService extends BaseService<ReferralCode> {
             referralCount: parseInt(item.referralCount),
             user: user,
           };
-        })
+        }),
       )
     ).filter(
       (
-        result
+        result,
       ): result is { userId: string; referralCount: number; user: User } =>
-        result !== null
+        result !== null,
     );
 
     return {

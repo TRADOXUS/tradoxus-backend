@@ -48,7 +48,7 @@ export class AuthService extends BaseService<User> {
     password: string,
     firstName?: string,
     lastName?: string,
-    referralCode?: string
+    referralCode?: string,
   ): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: { email },
@@ -73,7 +73,7 @@ export class AuthService extends BaseService<User> {
       try {
         await this.referralService.applyReferralCode(
           savedUser.id,
-          referralCode
+          referralCode,
         );
       } catch (error) {
         // Log error but don't fail registration
@@ -89,7 +89,7 @@ export class AuthService extends BaseService<User> {
    */
   async completeProfile(
     userId: string,
-    profileData: ProfileUpdateData
+    profileData: ProfileUpdateData,
   ): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -116,7 +116,7 @@ export class AuthService extends BaseService<User> {
       ) {
         await this.referralService.completeReferral(
           referralStatus.referralReceived.id,
-          "profile_completed"
+          "profile_completed",
         );
       }
     } catch (error) {
@@ -137,7 +137,7 @@ export class AuthService extends BaseService<User> {
     // Validate signature
     const isSignatureValid = await this.verifyWalletOwnership(
       walletAddress,
-      signature
+      signature,
     );
     if (!isSignatureValid) {
       throw this.createError("Invalid wallet signature", 400);
@@ -189,7 +189,7 @@ export class AuthService extends BaseService<User> {
    */
   async login(
     email: string,
-    password: string
+    password: string,
   ): Promise<{ user: User; token: string }> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
@@ -255,7 +255,7 @@ export class AuthService extends BaseService<User> {
    */
   private async verifyWalletOwnership(
     walletAddress: string,
-    signature: string
+    signature: string,
   ): Promise<boolean> {
     const normalizedAddress = walletAddress.toLowerCase();
     const nonceData = this.nonceStore[normalizedAddress];
@@ -290,7 +290,7 @@ export class AuthService extends BaseService<User> {
     // Verify wallet ownership
     const isSignatureValid = await this.verifyWalletOwnership(
       walletAddress,
-      signature
+      signature,
     );
     if (!isSignatureValid) {
       throw this.createError("Invalid wallet signature", 400);

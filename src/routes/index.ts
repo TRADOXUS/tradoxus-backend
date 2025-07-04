@@ -26,13 +26,13 @@ export function setupRoutes(): Router {
   const authService = new AuthService(AppDataSource.getRepository(User));
   const lessonProgressService = new LessonProgressService(
     AppDataSource.getRepository(LessonProgress),
-    AppDataSource.getRepository(Lesson)
+    AppDataSource.getRepository(Lesson),
   );
 
   // Inicializar controladores
   const authController = new AuthController(authService);
   const lessonProgressController = new LessonProgressController(
-    lessonProgressService
+    lessonProgressService,
   );
 
   // Configurar rutas
