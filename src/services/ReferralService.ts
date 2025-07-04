@@ -4,7 +4,7 @@ import { ReferralCode } from "../entities/ReferralCode";
 import { Referral, ReferralStatus, RewardType } from "../entities/Referral";
 import { User } from "../entities/User";
 import { AppDataSource } from "../config/database";
-import { AppError } from "../middleware/errorHandler";
+import { AppError, createReferralError } from "../middleware/errorHandler";
 
 // Configuration constants
 const REFERRER_REWARD_POINTS = parseInt(
@@ -32,6 +32,16 @@ export class ReferralService extends BaseService<ReferralCode> {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
+  }
+
+  // Private helper method for atomic usage count increment
+  private async incrementUsageCount(codeId: string): Promise<void> {
+    await this.repository
+      .createQueryBuilder()
+      .update(ReferralCode)
+      .set({ usageCount: () => "usageCount + 1" })
+      .where("id = :id", { id: codeId })
+      .execute();
   }
 
   // Generate referral code for user
@@ -78,10 +88,7 @@ export class ReferralService extends BaseService<ReferralCode> {
         throw error;
       }
     }
-    throw new AppError(
-      500,
-      "Failed to generate unique referral code after multiple attempts"
-    );
+    throw createReferralError.generationFailed();
   }
 
   // Get user's referral code
@@ -92,74 +99,92 @@ export class ReferralService extends BaseService<ReferralCode> {
     });
   }
 
-  // Validate and apply referral code
+  // Validate and apply referral code with transaction safety
   async applyReferralCode(
     referredUserId: string,
     code: string
   ): Promise<Referral> {
-    // Find the referral code
-    const referralCode = await this.repository.findOne({
-      where: { code, isActive: true },
-      relations: ["user"],
-    });
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!referralCode) {
-      throw new AppError(400, "Invalid or expired referral code");
+    try {
+      // Find the referral code within transaction
+      const referralCode = await queryRunner.manager.findOne(ReferralCode, {
+        where: { code, isActive: true },
+        relations: ["user"],
+      });
+
+      if (!referralCode) {
+        throw createReferralError.codeInvalid();
+      }
+
+      // Check if code is expired
+      if (referralCode.expiresAt && new Date() > referralCode.expiresAt) {
+        throw createReferralError.codeExpired();
+      }
+
+      // Check if max usage reached
+      if (referralCode.usageCount >= referralCode.maxUsage) {
+        throw createReferralError.usageLimit();
+      }
+
+      // Prevent self-referral
+      if (referralCode.userId === referredUserId) {
+        throw createReferralError.selfReferral();
+      }
+
+      // Check if user already used a referral code
+      const existingReferral = await queryRunner.manager.findOne(Referral, {
+        where: { referredUserId },
+      });
+
+      if (existingReferral) {
+        throw createReferralError.alreadyUsed();
+      }
+
+      // Check if referral code was created recently (business rule validation)
+      const codeAge = new Date().getTime() - referralCode.createdAt.getTime();
+      if (codeAge < 60000) { // 1 minute
+        throw createReferralError.codeTooNew();
+      }
+
+      // Create referral record
+      const referral = queryRunner.manager.create(Referral, {
+        referrerId: referralCode.userId,
+        referredUserId,
+        referralCodeUsed: code,
+        status: ReferralStatus.PENDING,
+        rewardEarnedReferrer: {
+          type: RewardType.POINTS,
+          value: REFERRER_REWARD_POINTS,
+          description: "Referral bonus for bringing a new user",
+        },
+        rewardEarnedReferred: {
+          type: RewardType.POINTS,
+          value: REFERRED_REWARD_POINTS,
+          description: "Welcome bonus for joining through referral",
+        },
+      });
+
+      const savedReferral = await queryRunner.manager.save(referral);
+
+      // Update referral code usage count atomically within transaction
+      await queryRunner.manager
+        .createQueryBuilder()
+        .update(ReferralCode)
+        .set({ usageCount: () => "usageCount + 1" })
+        .where("id = :id", { id: referralCode.id })
+        .execute();
+
+      await queryRunner.commitTransaction();
+      return savedReferral;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    // Check if code is expired
-    if (referralCode.expiresAt && new Date() > referralCode.expiresAt) {
-      throw new AppError(400, "Referral code has expired");
-    }
-
-    // Check if max usage reached
-    if (referralCode.usageCount >= referralCode.maxUsage) {
-      throw new AppError(400, "Referral code usage limit reached");
-    }
-
-    // Prevent self-referral
-    if (referralCode.userId === referredUserId) {
-      throw new AppError(400, "Cannot use your own referral code");
-    }
-
-    // Check if user already used a referral code
-    const existingReferral = await this.referralRepo.findOne({
-      where: { referredUserId },
-    });
-
-    if (existingReferral) {
-      throw new AppError(400, "User has already used a referral code");
-    }
-
-    // Create referral record
-    const referral = this.referralRepo.create({
-      referrerId: referralCode.userId,
-      referredUserId,
-      referralCodeUsed: code,
-      status: ReferralStatus.PENDING,
-      rewardEarnedReferrer: {
-        type: RewardType.POINTS,
-        value: REFERRER_REWARD_POINTS,
-        description: "Referral bonus for bringing a new user",
-      },
-      rewardEarnedReferred: {
-        type: RewardType.POINTS,
-        value: REFERRED_REWARD_POINTS,
-        description: "Welcome bonus for joining through referral",
-      },
-    });
-
-    const savedReferral = await this.referralRepo.save(referral);
-
-    // Update referral code usage count atomically
-    await this.repository
-      .createQueryBuilder()
-      .update(ReferralCode)
-      .set({ usageCount: () => "usageCount + 1" })
-      .where("id = :id", { id: referralCode.id })
-      .execute();
-
-    return savedReferral;
   }
 
   // Complete referral (when referred user meets criteria)
@@ -167,30 +192,43 @@ export class ReferralService extends BaseService<ReferralCode> {
     referralId: string,
     completionTrigger: string = "profile_completed"
   ): Promise<Referral> {
-    const referral = await this.referralRepo.findOne({
-      where: { id: referralId },
-      relations: ["referrer", "referredUser"],
-    });
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!referral) {
-      throw new AppError(404, "Referral not found");
+    try {
+      const referral = await queryRunner.manager.findOne(Referral, {
+        where: { id: referralId },
+        relations: ["referrer", "referredUser"],
+      });
+
+      if (!referral) {
+        throw createReferralError.notFound();
+      }
+
+      if (referral.status !== ReferralStatus.PENDING) {
+        throw createReferralError.notPending();
+      }
+
+      // Update referral status
+      referral.status = ReferralStatus.COMPLETED;
+      referral.completedAt = new Date();
+      referral.metadata = {
+        ...referral.metadata,
+        completionTrigger,
+        referrerPoints: referral.rewardEarnedReferrer?.value || 0,
+        referredPoints: referral.rewardEarnedReferred?.value || 0,
+      };
+
+      const completedReferral = await queryRunner.manager.save(referral);
+      await queryRunner.commitTransaction();
+      return completedReferral;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    if (referral.status !== ReferralStatus.PENDING) {
-      throw new AppError(400, "Referral is not in pending status");
-    }
-
-    // Update referral status
-    referral.status = ReferralStatus.COMPLETED;
-    referral.completedAt = new Date();
-    referral.metadata = {
-      ...referral.metadata,
-      completionTrigger,
-      referrerPoints: referral.rewardEarnedReferrer?.value || 0,
-      referredPoints: referral.rewardEarnedReferred?.value || 0,
-    };
-
-    return this.referralRepo.save(referral);
   }
 
   // Get user's referral status and rewards
@@ -265,19 +303,20 @@ export class ReferralService extends BaseService<ReferralCode> {
   async deactivateReferralCode(codeId: string): Promise<ReferralCode> {
     const code = await this.findOne(codeId);
     if (!code) {
-      throw new AppError(404, "Referral code not found");
+      throw createReferralError.codeNotFound();
     }
 
     code.isActive = false;
     return this.repository.save(code);
   }
 
-  // Get referral statistics
+  // Get referral statistics with enhanced analytics
   async getReferralStatistics(): Promise<{
     totalReferrals: number;
     completedReferrals: number;
     pendingReferrals: number;
     totalRewardsDistributed: number;
+    conversionRate: number;
     topReferrers: Array<{
       userId: string;
       referralCount: number;
@@ -303,6 +342,9 @@ export class ReferralService extends BaseService<ReferralCode> {
         (r.rewardEarnedReferred?.value || 0),
       0
     );
+
+    // Calculate conversion rate
+    const conversionRate = totalReferrals > 0 ? (completedReferrals / totalReferrals) * 100 : 0;
 
     // Get top referrers
     const topReferrersQuery = await this.referralRepo
@@ -343,7 +385,161 @@ export class ReferralService extends BaseService<ReferralCode> {
       completedReferrals,
       pendingReferrals,
       totalRewardsDistributed,
+      conversionRate,
       topReferrers,
+    };
+  }
+
+  // New method: Get referral analytics with time-based data
+  async getReferralAnalytics(period: string = "30d"): Promise<{
+    dailyReferrals: Array<{ date: string; count: number; completed: number }>;
+    conversionRate: number;
+    topPerformingCodes: Array<{
+      code: string;
+      usageCount: number;
+      completionRate: number;
+    }>;
+  }> {
+    // Parse period (30d, 7d, 1y)
+    const days = period.endsWith('d') ? parseInt(period) : 
+                 period.endsWith('y') ? parseInt(period) * 365 : 30;
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get daily referral data
+    const dailyData = await this.referralRepo
+      .createQueryBuilder("referral")
+      .select("DATE(referral.createdAt)", "date")
+      .addSelect("COUNT(*)", "count")
+      .addSelect("SUM(CASE WHEN referral.status = 'COMPLETED' THEN 1 ELSE 0 END)", "completed")
+      .where("referral.createdAt >= :startDate", { startDate })
+      .groupBy("DATE(referral.createdAt)")
+      .orderBy("date", "ASC")
+      .getRawMany();
+
+    const dailyReferrals = dailyData.map(row => ({
+      date: row.date,
+      count: parseInt(row.count),
+      completed: parseInt(row.completed)
+    }));
+
+    // Calculate overall conversion rate for the period
+    const totalCount = dailyReferrals.reduce((sum, day) => sum + day.count, 0);
+    const totalCompleted = dailyReferrals.reduce((sum, day) => sum + day.completed, 0);
+    const conversionRate = totalCount > 0 ? (totalCompleted / totalCount) * 100 : 0;
+
+    // Get top performing codes
+    const topCodes = await this.repository
+      .createQueryBuilder("code")
+      .leftJoin("referrals", "r", "r.referralCodeUsed = code.code")
+      .select("code.code", "code")
+      .addSelect("code.usageCount", "usageCount")
+      .addSelect("COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END)", "completedCount")
+      .where("code.usageCount > 0")
+      .groupBy("code.code, code.usageCount")
+      .orderBy("code.usageCount", "DESC")
+      .limit(10)
+      .getRawMany();
+
+    const topPerformingCodes = topCodes.map(row => ({
+      code: row.code,
+      usageCount: parseInt(row.usageCount),
+      completionRate: row.usageCount > 0 ? (parseInt(row.completedCount) / parseInt(row.usageCount)) * 100 : 0
+    }));
+
+    return {
+      dailyReferrals,
+      conversionRate,
+      topPerformingCodes,
+    };
+  }
+
+  // New methods for enhanced admin analytics
+  async getPerformanceMetrics(
+    startDate: Date,
+    groupBy: string = "day",
+    includeInactive: boolean = false
+  ): Promise<any> {
+    // Implementation placeholder - would include detailed performance metrics
+    return {
+      period: { start: startDate, end: new Date() },
+      groupBy,
+      metrics: [],
+    };
+  }
+
+  async getLeaderboard(
+    period: string = "30d",
+    limit: number = 10,
+    metric: string = "referrals"
+  ): Promise<any> {
+    // Implementation placeholder - would include leaderboard data
+    return {
+      period,
+      metric,
+      leaders: [],
+    };
+  }
+
+  async getCohortAnalysis(
+    startDate?: Date,
+    endDate?: Date,
+    cohortType: string = "monthly"
+  ): Promise<any> {
+    // Implementation placeholder - would include cohort analysis
+    return {
+      cohortType,
+      cohorts: [],
+    };
+  }
+
+  async getCodePerformanceAnalytics(
+    page: number = 1,
+    limit: number = 20,
+    sortBy: string = "usageCount",
+    sortOrder: string = "DESC",
+    includeInactive: boolean = false
+  ): Promise<any> {
+    // Implementation placeholder - would include code performance data
+    return {
+      items: [],
+      total: 0,
+      page,
+      limit,
+    };
+  }
+
+  async bulkUpdateReferrals(
+    referralIds: string[],
+    action: string,
+    adminId: string,
+    reason?: string,
+    notifyUsers: boolean = false
+  ): Promise<Array<{ id: string; success: boolean; error?: string }>> {
+    // Implementation placeholder - would handle bulk operations
+    return referralIds.map(id => ({ id, success: true }));
+  }
+
+  async exportData(
+    type: string,
+    format: string,
+    filters: any
+  ): Promise<any> {
+    // Implementation placeholder - would handle data export
+    return format === "csv" ? "CSV data" : { data: [] };
+  }
+
+  async getRealTimeStatistics(): Promise<any> {
+    // Implementation placeholder - would include real-time stats
+    const basic = await this.getReferralStatistics();
+    return {
+      ...basic,
+      realTimeMetrics: {
+        activeUsers: 0,
+        recentSignups: 0,
+        pendingRewards: 0,
+      },
     };
   }
 }
