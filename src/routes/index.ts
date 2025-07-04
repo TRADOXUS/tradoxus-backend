@@ -17,6 +17,7 @@ import { User } from "../entities/User";
 import { LessonProgress } from "../entities/LessonProgress";
 import { Lesson } from "../entities/Lesson";
 import userRouter from "./userRoutes";
+import referralRoutes from "./referralRoutes";
 
 export function setupRoutes(): Router {
   const router = Router();
@@ -59,6 +60,8 @@ export function setupRoutes(): Router {
 
   // NFT routes
   router.use("/v1/nfts", nftRouter);
+  // Add referral routes
+  router.use("/api/referral", referralRoutes);
 
   return router;
 }

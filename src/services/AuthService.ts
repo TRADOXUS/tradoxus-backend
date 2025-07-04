@@ -12,10 +12,20 @@ import { generateToken } from "../utils/jwtUtils";
 import { BaseService } from "./BaseService";
 import crypto from "crypto";
 import { CustomError } from "../types/errors";
+import { ReferralService } from "./ReferralService";
+import { ReferralStatus } from "../entities/Referral";
+
+interface ProfileUpdateData {
+  firstName?: string;
+  lastName?: string;
+}
 
 export class AuthService extends BaseService<User> {
+  private referralService: ReferralService;
+
   constructor(private userRepository: Repository<User>) {
     super(User);
+    this.referralService = new ReferralService();
   }
 
   // Store temporary nonces for wallet verification
@@ -38,6 +48,7 @@ export class AuthService extends BaseService<User> {
     password: string,
     firstName?: string,
     lastName?: string,
+    referralCode?: string,
   ): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: { email },
@@ -47,6 +58,7 @@ export class AuthService extends BaseService<User> {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
     const user = this.userRepository.create({
       email,
       passwordHash,
@@ -54,7 +66,64 @@ export class AuthService extends BaseService<User> {
       lastName,
     });
 
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    // Apply referral code if provided
+    if (referralCode) {
+      try {
+        await this.referralService.applyReferralCode(
+          savedUser.id,
+          referralCode,
+        );
+      } catch (error) {
+        // Log error but don't fail registration
+        console.warn(`Failed to apply referral code: ${error.message}`);
+      }
+    }
+
+    return savedUser;
+  }
+
+  /**
+   * Complete user profile and trigger referral completion
+   */
+  async completeProfile(
+    userId: string,
+    profileData: ProfileUpdateData,
+  ): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Type-safe property assignment without using 'any'
+    if (profileData.firstName !== undefined) {
+      user.firstName = profileData.firstName;
+    }
+    if (profileData.lastName !== undefined) {
+      user.lastName = profileData.lastName;
+    }
+
+    const updatedUser = await this.userRepository.save(user);
+
+    // Check and complete any pending referrals
+    try {
+      const referralStatus =
+        await this.referralService.getUserReferralStatus(userId);
+      if (
+        referralStatus.referralReceived &&
+        referralStatus.referralReceived.status === ReferralStatus.PENDING
+      ) {
+        await this.referralService.completeReferral(
+          referralStatus.referralReceived.id,
+          "profile_completed",
+        );
+      }
+    } catch (error) {
+      console.warn("Failed to complete referral:", error);
+    }
+
+    return updatedUser;
   }
 
   /**
