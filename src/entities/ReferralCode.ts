@@ -11,7 +11,12 @@ import {
 import { User } from "./User";
 
 @Entity("referral_codes")
-@Index(["userId", "isActive"])
+// Compound indexes for common query patterns
+@Index(["userId", "isActive"]) // For finding user's active codes
+@Index(["isActive", "expiresAt"]) // For finding active non-expired codes
+@Index(["isActive", "usageCount", "maxUsage"]) // For finding available codes
+@Index(["createdAt", "isActive"]) // For time-based active code queries
+@Index(["usageCount", "maxUsage"]) // For usage analytics
 export class ReferralCode {
   @PrimaryGeneratedColumn("uuid")
   id: string;
