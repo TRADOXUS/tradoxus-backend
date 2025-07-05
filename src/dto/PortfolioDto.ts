@@ -1,199 +1,225 @@
-import { IsString, IsNumber, IsOptional, IsArray, ValidateNested, IsEnum, IsUUID } from "class-validator"
-import { Type } from "class-transformer"
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsEnum,
+  IsUUID,
+} from "class-validator";
+import { Type } from "class-transformer";
 
 export class AssetAllocationDto {
   @IsString()
-  asset: string
+  asset: string;
 
   @IsNumber()
-  value: number
+  value: number;
 
   @IsNumber()
-  percentage: number
+  percentage: number;
 
   @IsNumber()
-  weight: number
+  weight: number;
 }
 
 export class AllocationDto {
   @IsString()
-  asset: string
+  asset: string;
 
   @IsNumber()
-  value: number
+  value: number;
 
   @IsNumber()
-  percentage: number
+  percentage: number;
 
   @IsString()
-  color: string
+  color: string;
 }
 
 export class PortfolioSummaryDto {
   @IsNumber()
-  totalValue: number
+  totalValue: number;
 
   @IsNumber()
-  totalPnL: number
+  totalPnL: number;
 
   @IsNumber()
-  totalPnLPercentage: number
+  totalPnLPercentage: number;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AllocationDto)
-  allocation: AllocationDto[]
+  allocation: AllocationDto[];
 
   @IsOptional()
   @IsNumber()
-  diversificationScore?: number
+  diversificationScore?: number;
 
   @IsOptional()
   @IsNumber()
-  sharpeRatio?: number
+  sharpeRatio?: number;
 
   @IsOptional()
   @IsNumber()
-  maxDrawdown?: number
+  maxDrawdown?: number;
 
   @IsOptional()
   @IsNumber()
-  cagr?: number
+  cagr?: number;
 }
 
 export class AssetBalanceDto {
   @IsString()
-  asset: string
+  asset: string;
 
   @IsNumber()
-  available: number
+  available: number;
 
   @IsNumber()
-  locked: number
+  locked: number;
 
   @IsNumber()
-  total: number
+  total: number;
 
   @IsNumber()
-  currentValue: number
-
-  @IsOptional()
-  @IsNumber()
-  averageCost?: number
+  currentValue: number;
 
   @IsOptional()
   @IsNumber()
-  unrealizedPnL?: number
+  averageCost?: number;
 
   @IsOptional()
   @IsNumber()
-  realizedPnL?: number
+  unrealizedPnL?: number;
 
   @IsOptional()
   @IsNumber()
-  totalPnL?: number
+  realizedPnL?: number;
+
+  @IsOptional()
+  @IsNumber()
+  totalPnL?: number;
 
   @IsNumber()
-  currentPrice: number
+  currentPrice: number;
 }
 
 export class TransactionDto {
   @IsUUID()
-  id: string
+  id: string;
 
-  @IsEnum(["BUY", "SELL", "DEPOSIT", "WITHDRAWAL", "TRANSFER_IN", "TRANSFER_OUT", "REWARD", "FEE"])
-  type: string
+  @IsEnum([
+    "BUY",
+    "SELL",
+    "DEPOSIT",
+    "WITHDRAWAL",
+    "TRANSFER_IN",
+    "TRANSFER_OUT",
+    "REWARD",
+    "FEE",
+  ])
+  type: string;
 
   @IsEnum(["PENDING", "COMPLETED", "FAILED", "CANCELLED"])
-  status: string
+  status: string;
 
   @IsString()
-  asset: string
+  asset: string;
 
   @IsNumber()
-  amount: number
-
-  @IsOptional()
-  @IsNumber()
-  price?: number
+  amount: number;
 
   @IsOptional()
   @IsNumber()
-  fee?: number
+  price?: number;
 
   @IsOptional()
   @IsNumber()
-  totalValue?: number
+  fee?: number;
+
+  @IsOptional()
+  @IsNumber()
+  totalValue?: number;
 
   @IsOptional()
   @IsString()
-  txHash?: string
+  txHash?: string;
 
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @IsString()
-  createdAt: Date
+  createdAt: Date;
 }
 
 export class PortfolioPerformanceDto {
   @IsNumber()
-  currentValue: number
+  currentValue: number;
 
   @IsNumber()
-  previousValue: number
+  previousValue: number;
 
   @IsNumber()
-  absoluteChange: number
+  absoluteChange: number;
 
   @IsNumber()
-  percentageChange: number
+  percentageChange: number;
 
   @IsEnum(["day", "week", "month", "year"])
-  period: string
+  period: string;
 }
 
 export class PortfolioHistoryDto {
   @IsArray()
-  timestamps: Date[]
+  timestamps: Date[];
 
   @IsArray()
-  values: number[]
+  values: number[];
 
   @IsEnum(["day", "week", "month", "year"])
-  period: string
+  period: string;
 
   @IsNumber()
-  totalReturn: number
+  totalReturn: number;
 
   @IsNumber()
-  volatility: number
+  volatility: number;
 }
 
 export class CreateTransactionDto {
-  @IsEnum(["BUY", "SELL", "DEPOSIT", "WITHDRAWAL", "TRANSFER_IN", "TRANSFER_OUT", "REWARD", "FEE"])
-  type: string
+  @IsEnum([
+    "BUY",
+    "SELL",
+    "DEPOSIT",
+    "WITHDRAWAL",
+    "TRANSFER_IN",
+    "TRANSFER_OUT",
+    "REWARD",
+    "FEE",
+  ])
+  type: string;
 
   @IsString()
-  asset: string
+  asset: string;
 
   @IsNumber()
-  amount: number
-
-  @IsOptional()
-  @IsNumber()
-  price?: number
+  amount: number;
 
   @IsOptional()
   @IsNumber()
-  fee?: number
+  price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  fee?: number;
 
   @IsOptional()
   @IsString()
-  txHash?: string
+  txHash?: string;
 
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 }

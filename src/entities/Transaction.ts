@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from "typeorm"
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from "typeorm";
 
 export enum TransactionType {
   BUY = "BUY",
@@ -26,51 +33,51 @@ export enum TransactionStatus {
 @Index(["txHash"])
 export class Transaction {
   @PrimaryGeneratedColumn("uuid")
-  id!: string
+  id!: string;
 
   @Column({ type: "uuid" })
-  userId!: string
+  userId!: string;
 
   @Column({
     type: "enum",
     enum: TransactionType,
   })
-  type!: TransactionType
+  type!: TransactionType;
 
   @Column({
     type: "enum",
     enum: TransactionStatus,
     default: TransactionStatus.PENDING,
   })
-  status!: TransactionStatus
+  status!: TransactionStatus;
 
   @Column({ type: "varchar", length: 20 })
-  asset!: string
+  asset!: string;
 
   @Column({ type: "decimal", precision: 28, scale: 8 })
-  amount!: string
+  amount!: string;
 
   @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
-  price!: string | null
+  price!: string | null;
 
   @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
-  fee!: string | null
+  fee!: string | null;
 
   @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
-  totalValue!: string | null
+  totalValue!: string | null;
 
   @Column({ type: "varchar", length: 100, nullable: true })
-  txHash!: string | null
+  txHash!: string | null;
 
   @Column({ type: "text", nullable: true })
-  description!: string | null
+  description!: string | null;
 
   @Column({ type: "jsonb", nullable: true })
-  metadata!: string | null
+  metadata!: string | null;
 
   @CreateDateColumn()
-  createdAt!: Date
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt!: Date
+  updatedAt!: Date;
 }

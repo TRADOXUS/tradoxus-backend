@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from "typeorm"
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from "typeorm";
 
 @Entity("balances")
 @Index(["userId", "asset"], { unique: true })
@@ -6,35 +13,35 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 @Index(["asset"])
 export class Balance {
   @PrimaryGeneratedColumn("uuid")
-  id!: string
+  id!: string;
 
   @Column({ type: "uuid" })
-  userId!: string
+  userId!: string;
 
   @Column({ type: "varchar", length: 20 })
-  asset!: string
+  asset!: string;
 
   @Column({ type: "decimal", precision: 28, scale: 8, default: "0" })
-  available!: string
+  available!: string;
 
   @Column({ type: "decimal", precision: 28, scale: 8, default: "0" })
-  locked!: string
+  locked!: string;
 
   @Column({ type: "decimal", precision: 28, scale: 8, default: "0" })
-  total!: string
+  total!: string;
 
   @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
-  averageCost!: string | null
+  averageCost!: string | null;
 
   @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
-  unrealizedPnL!: string | null
+  unrealizedPnL!: string | null;
 
   @Column({ type: "decimal", precision: 28, scale: 8, nullable: true })
-  realizedPnL!: string | null
+  realizedPnL!: string | null;
 
   @CreateDateColumn()
-  createdAt!: Date
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt!: Date
+  updatedAt!: Date;
 }
