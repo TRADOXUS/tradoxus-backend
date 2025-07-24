@@ -9,6 +9,7 @@ This repository contains the backend services that handle the core functionality
 - User management and authentication
 - Performance analytics
 - Blockchain integration with Stellar
+- **Trading operations and market data**
 - API services for frontend applications
 
 ## 🛠 Technical Stack
@@ -43,6 +44,11 @@ The application requires the following environment variables:
 - `DB_NAME`: PostgreSQL database name
 - `REDIS_HOST`: Redis host
 - `REDIS_PORT`: Redis port
+- `TRADING_EXCHANGE_API_KEY`: Exchange API key for trading operations
+- `TRADING_EXCHANGE_SECRET`: Exchange API secret
+- `TRADING_EXCHANGE_SANDBOX`: Enable sandbox mode (true/false)
+- `TRADING_DEFAULT_SYMBOLS`: Default trading symbols (comma-separated)
+- `TRADING_ORDER_TIMEOUT`: Order timeout in milliseconds
 
 These are already configured in the `docker-compose.yml` file.
 
@@ -199,6 +205,14 @@ src/
 - Real-time performance metrics
 - Historical performance data
 - Advanced analytics and insights
+
+### Trading Operations
+
+- Order management (buy/sell orders)
+- Real-time market data and ticker information
+- Order book data for trading pairs
+- User order history and status tracking
+- Mock trading environment for learning
 - Leaderboards and social comparison
 - Learning progress tracking
 
@@ -267,6 +281,163 @@ The repository includes GitHub Actions workflows for:
 - Prometheus metrics
 - Health check endpoints
 - Error tracking integration
+
+## 🔌 Trading API Endpoints
+
+The following trading endpoints have been added to support trading operations:
+
+### Orders
+
+#### Create Order
+```http
+POST /trading/orders
+Content-Type: application/json
+
+{
+  "symbol": "BTC/USD",
+  "type": "buy",
+  "amount": 0.1,
+  "price": 45000,
+  "userId": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Order created successfully",
+  "data": {
+    "id": "order_1234567890_abc123def",
+    "symbol": "BTC/USD",
+    "type": "buy",
+    "amount": 0.1,
+    "price": 45000,
+    "status": "pending",
+    "userId": "123e4567-e89b-12d3-a456-426614174000",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+#### Get User Orders
+```http
+GET /trading/orders/user/:userId?status=pending&symbol=BTC/USD&limit=50&offset=0
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Orders retrieved successfully",
+  "data": [
+    {
+      "id": "order_1",
+      "symbol": "BTC/USD",
+      "type": "buy",
+      "amount": 0.1,
+      "price": 45000,
+      "status": "filled",
+      "userId": "123e4567-e89b-12d3-a456-426614174000",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "filledAmount": 0.1,
+      "filledPrice": 44950
+    }
+  ]
+}
+```
+
+### Market Data
+
+#### Get Market Ticker
+```http
+GET /trading/market/ticker
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Market data retrieved successfully",
+  "data": [
+    {
+      "symbol": "BTC/USD",
+      "price": 45250.50,
+      "change24h": 1250.30,
+      "changePercent24h": 2.84,
+      "volume24h": 1234567890,
+      "high24h": 46000,
+      "low24h": 43800,
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### Get Order Book
+```http
+GET /trading/market/orderbook/:symbol?depth=20
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Orderbook retrieved successfully",
+  "data": {
+    "symbol": "BTC/USD",
+    "bids": [
+      {
+        "price": 45000,
+        "amount": 2.5,
+        "total": 2.5
+      }
+    ],
+    "asks": [
+      {
+        "price": 45010,
+        "amount": 1.8,
+        "total": 1.8
+      }
+    ],
+    "timestamp": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Testing the Trading API
+
+To test the trading endpoints locally:
+
+1. Start the application:
+```bash
+docker-compose up
+```
+
+2. Test the endpoints using curl or Postman:
+```bash
+# Get market ticker
+curl http://localhost:4001/trading/market/ticker
+
+# Get order book for BTC/USD
+curl http://localhost:4001/trading/market/orderbook/BTC/USD
+
+# Create a new order
+curl -X POST http://localhost:4001/trading/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symbol": "BTC/USD",
+    "type": "buy",
+    "amount": 0.1,
+    "price": 45000,
+    "userId": "123e4567-e89b-12d3-a456-426614174000"
+  }'
+
+# Get user orders
+curl http://localhost:4001/trading/orders/user/123e4567-e89b-12d3-a456-426614174000
+```
 
 ## 📄 License
 

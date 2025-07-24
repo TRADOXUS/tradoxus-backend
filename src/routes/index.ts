@@ -19,6 +19,7 @@ import { Lesson } from "../entities/Lesson";
 import userRouter from "./userRoutes";
 import strategyRoutes from "./strategyRoutes";
 import referralRoutes from "./referralRoutes";
+import tradingRoutes from "./tradingRoutes";
 
 export function setupRoutes(): Router {
   const router = Router();
@@ -66,6 +67,9 @@ export function setupRoutes(): Router {
 
   // Strategy Builder routes
   router.use("/strategies", strategyRoutes);
+
+  // Trading routes
+  router.use("/trading", tradingRoutes);
 
   return router;
 }
