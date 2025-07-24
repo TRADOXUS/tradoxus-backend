@@ -10,7 +10,7 @@ This repository contains the backend services that handle the core functionality
 - Performance analytics
 - Blockchain integration with Stellar
 - **Trading operations and market data**
-- API services for frontend applications
+- API services for frontend application
 
 ## 🛠 Technical Stack
 
