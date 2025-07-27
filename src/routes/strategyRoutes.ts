@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { StrategyController } from "../controllers/StrategyController";
-import { authMiddleware } from "../middleware/authMiddleware";
+import { authenticate } from "../middleware/authMiddleware";
 
 const router = Router();
 const controller = new StrategyController();
 
-router.use(authMiddleware);
+router.use(authenticate);
 
 router.post("/", (req, res, next) => controller.create(req, res).catch(next));
 router.get("/", (req, res, next) => controller.list(req, res).catch(next));

@@ -57,3 +57,5 @@ export const authenticate = async (
     res.status(500).json({ message: "Authentication failed" });
   }
 };
+
+export default authenticate;

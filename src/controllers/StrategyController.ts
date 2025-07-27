@@ -7,6 +7,7 @@ import { AppError } from "../utils/AppError";
 const strategyService = new StrategyService();
 
 export class StrategyController {
+ 
   async create(req: Request, res: Response) {
     const dto = new CreateStrategyDto();
     Object.assign(dto, req.body);

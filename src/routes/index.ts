@@ -17,7 +17,11 @@ import { User } from "../entities/User";
 import { LessonProgress } from "../entities/LessonProgress";
 import { Lesson } from "../entities/Lesson";
 import userRouter from "./userRoutes";
+
+import economicRoutes from "./economicCalendarRoutes";
+
 import strategyRoutes from "./strategyRoutes";
+
 import referralRoutes from "./referralRoutes";
 
 export function setupRoutes(): Router {
@@ -66,6 +70,9 @@ export function setupRoutes(): Router {
 
   // Strategy Builder routes
   router.use("/strategies", strategyRoutes);
+
+  // economic Builder routes
+  router.use("/economic", economicRoutes);
 
   return router;
 }

@@ -8,7 +8,6 @@ import { User } from "../entities/User";
 import {
   CalendarQueryDto,
   CreateAlertDto,
-  UpcomingEventsDto, 
 } from "../dto/EconomicCalendarDto";
 
 
@@ -31,7 +30,7 @@ export class EconomicCalendarService {
 
   async getFilteredEvents(query: CalendarQueryDto): Promise<EconomicEvent[]> {
     const { startDate, endDate, countries, importance, currencies, limit = 10, offset = 0 } = query;
-
+    
     const queryBuilder = this.economicEventRepository.createQueryBuilder("event");
 
     if (startDate) {
