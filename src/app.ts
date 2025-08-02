@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -5,6 +6,9 @@ import { AppDataSource } from "./config/database";
 import routes from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
 import { Request, Response, NextFunction } from "express";
+import economicCalendarRoutes from './routes/economicCalendarRoutes';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpecs from './config/swagger'; 
 
 const app = express();
 const port = process.env.PORT || 4001;
@@ -29,6 +33,16 @@ AppDataSource.initialize()
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
     });
+
+    app.use("/api/economic-calendar", economicCalendarRoutes);
+
+     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, { explorer: true }));
+    console.log(`Swagger UI available at http://localhost:${port}/api-docs`);
+
+
+    // Global error handler (should be the last middleware)
+    app.use(errorHandler);
+  
   })
   .catch((error) => {
     console.error("Error connecting to the database:", error);
