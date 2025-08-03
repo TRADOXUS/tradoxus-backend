@@ -187,4 +187,206 @@ describe("TradingController", () => {
       expect(mockRes.json).toHaveBeenCalled();
     });
   });
+
+  describe("getUserOrders", () => {
+    it("should handle valid user orders request", async () => {
+      const mockReq = {
+        params: { userId: "123e4567-e89b-12d3-a456-426614174000" },
+        query: { limit: "10", offset: "0" },
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await tradingController.getUserOrders(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+
+    it("should handle validation errors for getUserOrders", async () => {
+      const mockReq = {
+        params: { userId: "invalid-uuid" },
+        query: { limit: "invalid", offset: "-1" },
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await tradingController.getUserOrders(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+
+    it("should handle service errors in getUserOrders", async () => {
+      const mockReq = {
+        params: { userId: "123e4567-e89b-12d3-a456-426614174000" },
+        query: { limit: "10", offset: "0" },
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      // Mock service to throw error
+      jest.spyOn(tradingService, 'getUserOrders').mockRejectedValueOnce(new Error('Service error'));
+
+      await tradingController.getUserOrders(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+  });
+
+  describe("getMarketTicker", () => {
+    it("should return market ticker data", async () => {
+      const mockReq = {} as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await tradingController.getMarketTicker(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+
+    it("should handle service errors in getMarketTicker", async () => {
+      const mockReq = {} as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      // Mock service to throw error
+      jest.spyOn(tradingService, 'getMarketTicker').mockRejectedValueOnce(new Error('Service error'));
+
+      await tradingController.getMarketTicker(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+  });
+
+  describe("getOrderBook", () => {
+    it("should handle valid orderbook request", async () => {
+      const mockReq = {
+        params: { symbol: "BTC/USD" },
+        query: { depth: "10" },
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await tradingController.getOrderBook(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+
+    it("should handle validation errors for getOrderBook", async () => {
+      const mockReq = {
+        params: { symbol: "" },
+        query: { depth: "invalid" },
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await tradingController.getOrderBook(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+
+    it("should handle service errors in getOrderBook", async () => {
+      const mockReq = {
+        params: { symbol: "BTC/USD" },
+        query: { depth: "10" },
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      // Mock service to throw error
+      jest.spyOn(tradingService, 'getOrderBook').mockRejectedValueOnce(new Error('Service error'));
+
+      await tradingController.getOrderBook(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+
+    it("should handle missing symbol parameter", async () => {
+      const mockReq = {
+        params: {},
+        query: { depth: "10" },
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await tradingController.getOrderBook(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+  });
+
+  describe("createOrder - Additional Edge Cases", () => {
+    it("should handle malformed JSON in request body", async () => {
+      const mockReq = {
+        body: null,
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await tradingController.createOrder(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+
+    it("should handle service throwing specific validation errors", async () => {
+      const mockReq = {
+        body: {
+          symbol: "",
+          type: "buy",
+          amount: "-1",
+          price: "0",
+          userId: "invalid-uuid",
+        },
+      } as any;
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await tradingController.createOrder(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalled();
+    });
+  });
 });

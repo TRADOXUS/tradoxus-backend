@@ -17,6 +17,29 @@ export class TradingService extends BaseService {
 
   async createOrder(orderData: CreateOrderDto): Promise<OrderResponseDto> {
     try {
+      // Input validation
+      if (!orderData.symbol || orderData.symbol.trim() === "") {
+        throw new Error("Symbol is required and cannot be empty");
+      }
+      
+      if (orderData.amount <= 0) {
+        throw new Error("Amount must be greater than 0");
+      }
+      
+      if (orderData.price <= 0) {
+        throw new Error("Price must be greater than 0");
+      }
+      
+      if (!orderData.userId || orderData.userId.trim() === "") {
+        throw new Error("User ID is required and cannot be empty");
+      }
+      
+      // Basic UUID format validation
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(orderData.userId)) {
+        throw new Error("Invalid user ID format");
+      }
+
       // Mock order creation - replace with actual exchange integration
       const orderId = this.generateOrderId();
 
@@ -40,7 +63,7 @@ export class TradingService extends BaseService {
       return order;
     } catch (error) {
       this.logger.error("Error creating order:", error);
-      throw new Error("Failed to create order");
+      throw error; // Re-throw the original error instead of generic message
     }
   }
 
