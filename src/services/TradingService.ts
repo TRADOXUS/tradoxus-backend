@@ -1,4 +1,3 @@
-import { Repository } from "typeorm";
 import {
   CreateOrderDto,
   OrderResponseDto,
@@ -8,11 +7,18 @@ import {
   OrderStatus,
   OrderType,
 } from "../dto/TradingDto";
-import { BaseService } from "./BaseService";
 
-export class TradingService extends BaseService {
+export class TradingService {
+  private logger = {
+    error: (message: string, error?: any) => {
+      console.error(`[TradingService] ${message}`, error);
+    },
+    info: (message: string) => {
+      console.log(`[TradingService] ${message}`);
+    },
+  };
+
   constructor() {
-    super();
   }
 
   async createOrder(orderData: CreateOrderDto): Promise<OrderResponseDto> {
