@@ -63,4 +63,4 @@ export class CreateStrategyTables1680000000000 implements MigrationInterface {
       DROP TABLE IF EXISTS "strategies";
     `);
   }
-} 
+}

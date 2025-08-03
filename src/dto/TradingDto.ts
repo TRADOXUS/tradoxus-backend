@@ -1,16 +1,23 @@
-import { IsString, IsNumber, IsEnum, IsOptional, IsUUID, Min } from 'class-validator';
-import { Transform } from 'class-transformer';
+import {
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsOptional,
+  IsUUID,
+  Min,
+} from "class-validator";
+import { Transform } from "class-transformer";
 
 export enum OrderType {
-  BUY = 'buy',
-  SELL = 'sell'
+  BUY = "buy",
+  SELL = "sell",
 }
 
 export enum OrderStatus {
-  PENDING = 'pending',
-  FILLED = 'filled',
-  CANCELLED = 'cancelled',
-  PARTIALLY_FILLED = 'partially_filled'
+  PENDING = "pending",
+  FILLED = "filled",
+  CANCELLED = "cancelled",
+  PARTIALLY_FILLED = "partially_filled",
 }
 
 export class CreateOrderDto {

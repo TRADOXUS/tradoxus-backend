@@ -289,6 +289,7 @@ The following trading endpoints have been added to support trading operations:
 ### Orders
 
 #### Create Order
+
 ```http
 POST /trading/orders
 Content-Type: application/json
@@ -303,6 +304,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -322,11 +324,13 @@ Content-Type: application/json
 ```
 
 #### Get User Orders
+
 ```http
 GET /trading/orders/user/:userId?status=pending&symbol=BTC/USD&limit=50&offset=0
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -352,11 +356,13 @@ GET /trading/orders/user/:userId?status=pending&symbol=BTC/USD&limit=50&offset=0
 ### Market Data
 
 #### Get Market Ticker
+
 ```http
 GET /trading/market/ticker
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -364,8 +370,8 @@ GET /trading/market/ticker
   "data": [
     {
       "symbol": "BTC/USD",
-      "price": 45250.50,
-      "change24h": 1250.30,
+      "price": 45250.5,
+      "change24h": 1250.3,
       "changePercent24h": 2.84,
       "volume24h": 1234567890,
       "high24h": 46000,
@@ -377,11 +383,13 @@ GET /trading/market/ticker
 ```
 
 #### Get Order Book
+
 ```http
 GET /trading/market/orderbook/:symbol?depth=20
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -412,11 +420,13 @@ GET /trading/market/orderbook/:symbol?depth=20
 To test the trading endpoints locally:
 
 1. Start the application:
+
 ```bash
 docker-compose up
 ```
 
 2. Test the endpoints using curl or Postman:
+
 ```bash
 # Get market ticker
 curl http://localhost:4001/trading/market/ticker

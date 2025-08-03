@@ -41,7 +41,9 @@ export class Strategy {
   @OneToMany(() => StrategyRule, (rule) => rule.strategy, { cascade: true })
   rules!: StrategyRule[];
 
-  @OneToMany(() => StrategyCheckpoint, (checkpoint) => checkpoint.strategy, { cascade: true })
+  @OneToMany(() => StrategyCheckpoint, (checkpoint) => checkpoint.strategy, {
+    cascade: true,
+  })
   checkpoints!: StrategyCheckpoint[];
 
   @CreateDateColumn()
@@ -49,4 +51,4 @@ export class Strategy {
 
   @UpdateDateColumn()
   updatedAt!: Date;
-} 
+}

@@ -59,4 +59,4 @@ export class StrategyController {
     const indicators = strategyService.getIndicators();
     res.json(indicators);
   }
-} 
+}
