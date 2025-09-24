@@ -6,7 +6,14 @@ import {
   UpdateDateColumn,
   ManyToOne,
 } from "typeorm";
-import { IsNotEmpty, IsString, IsEnum, IsUUID, IsInt, Min } from "class-validator";
+import {
+  IsNotEmpty,
+  IsString,
+  IsEnum,
+  IsUUID,
+  IsInt,
+  Min,
+} from "class-validator";
 import { Strategy } from "./Strategy";
 
 export enum CheckpointCategory {
@@ -23,7 +30,9 @@ export class StrategyCheckpoint {
   @IsUUID()
   strategyId!: string;
 
-  @ManyToOne(() => Strategy, (strategy) => strategy.checkpoints, { onDelete: "CASCADE" })
+  @ManyToOne(() => Strategy, (strategy) => strategy.checkpoints, {
+    onDelete: "CASCADE",
+  })
   strategy!: Strategy;
 
   @Column({ type: "text" })
@@ -45,4 +54,4 @@ export class StrategyCheckpoint {
 
   @UpdateDateColumn()
   updatedAt!: Date;
-} 
+}

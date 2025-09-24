@@ -24,7 +24,7 @@ export class EconomicEvent {
   date!: Date;
 
   @Column({ type: "time" })
-  time!: Date; 
+  time!: Date;
 
   @Column({ type: "varchar", length: 100 })
   country!: string;
@@ -47,7 +47,7 @@ export class EconomicEvent {
   @Column({ type: "varchar", length: 100, nullable: true })
   actualValue!: string | null;
 
-  @Column({ type: "text", nullable: true }) 
+  @Column({ type: "text", nullable: true })
   description!: string | null;
 
   @Column({ type: "varchar", length: 100, nullable: true })
@@ -59,10 +59,10 @@ export class EconomicEvent {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @OneToMany(() => EventImpactAnalysis, analysis => analysis.economicEvent)
+  @OneToMany(() => EventImpactAnalysis, (analysis) => analysis.economicEvent)
   impactAnalyses!: EventImpactAnalysis[];
 
-  @OneToMany(() => UserEventAlert, alert => alert.economicEvent)
+  @OneToMany(() => UserEventAlert, (alert) => alert.economicEvent)
   userAlerts!: UserEventAlert[];
 }
 
@@ -77,11 +77,11 @@ export class EventImpactAnalysis {
   @Column({ type: "uuid" })
   eventId!: string;
 
-  @ManyToOne(() => EconomicEvent, event => event.impactAnalyses)
-  @JoinColumn({ name: "eventId" }) 
+  @ManyToOne(() => EconomicEvent, (event) => event.impactAnalyses)
+  @JoinColumn({ name: "eventId" })
   economicEvent!: EconomicEvent;
 
-  @Column({ type: "varchar", length: 100, nullable: true }) 
+  @Column({ type: "varchar", length: 100, nullable: true })
   assetClass!: string | null;
 
   @Column({ type: "varchar", length: 50, nullable: true })
@@ -108,16 +108,16 @@ export class UserEventAlert {
   alertId!: string;
 
   @Column({ type: "uuid" })
-  userId!: string; 
+  userId!: string;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' }) 
+  @ManyToOne(() => User, { onDelete: "CASCADE" })
   @JoinColumn({ name: "userId" })
   User!: unknown;
 
   @Column({ type: "uuid" })
-  eventId!: string; 
+  eventId!: string;
 
-  @ManyToOne(() => EconomicEvent, event => event.userAlerts)
+  @ManyToOne(() => EconomicEvent, (event) => event.userAlerts)
   @JoinColumn({ name: "eventId" })
   economicEvent!: EconomicEvent;
 
