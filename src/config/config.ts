@@ -8,6 +8,12 @@ interface Config {
   nodeEnv: string;
   jwtSecret: string;
   jwtExpiration: string;
+  redis: {
+    host: string;
+    port: string;
+    password?: string;
+    db: string;
+  };
   web3: {
     chainId: number;
     rpcUrl: string;
@@ -25,6 +31,12 @@ const config: Config = {
   jwtSecret:
     process.env.JWT_SECRET || "default_secret_do_not_use_in_production",
   jwtExpiration: process.env.JWT_EXPIRATION || "24h",
+  redis: {
+    host: process.env.REDIS_HOST || "localhost",
+    port: process.env.REDIS_PORT || "6381",
+    password: process.env.REDIS_PASSWORD,
+    db: process.env.REDIS_DB || "0",
+  },
   web3: {
     chainId: parseInt(process.env.CHAIN_ID || "1", 10), // Ethereum mainnet by default
     rpcUrl:

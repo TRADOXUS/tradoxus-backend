@@ -19,9 +19,9 @@ describe("StrategyService", () => {
   it("should return supported indicators", () => {
     const indicators = service.getIndicators();
     expect(Array.isArray(indicators)).toBe(true);
-    expect(indicators.some(i => i.name === "RSI")).toBe(true);
+    expect(indicators.some((i) => i.name === "RSI")).toBe(true);
   });
 
   // Add more tests for createStrategy, getStrategies, getStrategyById, updateStrategy, deleteStrategy
   // using mocks and sample data as needed.
-}); 
+});

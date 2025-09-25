@@ -26,7 +26,9 @@ export class StrategyRule {
   @IsUUID()
   strategyId!: string;
 
-  @ManyToOne(() => Strategy, (strategy) => strategy.rules, { onDelete: "CASCADE" })
+  @ManyToOne(() => Strategy, (strategy) => strategy.rules, {
+    onDelete: "CASCADE",
+  })
   strategy!: Strategy;
 
   @Column({ type: "enum", enum: RuleType })
@@ -37,7 +39,9 @@ export class StrategyRule {
   @IsString()
   description?: string;
 
-  @OneToMany(() => StrategyCondition, (condition) => condition.rule, { cascade: true })
+  @OneToMany(() => StrategyCondition, (condition) => condition.rule, {
+    cascade: true,
+  })
   conditions!: StrategyCondition[];
 
   @CreateDateColumn()
@@ -45,4 +49,4 @@ export class StrategyRule {
 
   @UpdateDateColumn()
   updatedAt!: Date;
-} 
+}

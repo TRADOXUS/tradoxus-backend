@@ -7,10 +7,12 @@ import { asyncHandler } from "../utils/asyncHandler";
 const router = Router();
 
 const economicCalendarService = new EconomicCalendarService();
-const economicCalendarController = new EconomicCalendarController(economicCalendarService);
+const economicCalendarController = new EconomicCalendarController(
+  economicCalendarService,
+);
 
 const bind = (
-  method: (req: Request, res: Response, next: NextFunction) => Promise<void>
+  method: (req: Request, res: Response, next: NextFunction) => Promise<void>,
 ) => asyncHandler(method.bind(economicCalendarController));
 
 // --- Calendar Endpoints ---
@@ -25,7 +27,9 @@ router.get("/alerts", bind(economicCalendarController.getUserAlerts));
 router.delete("/alerts/:id", bind(economicCalendarController.deleteAlert));
 
 // --- Analysis Endpoints ---
-router.get("/impact-analysis/:eventId", bind(economicCalendarController.getImpactAnalysis));
-
+router.get(
+  "/impact-analysis/:eventId",
+  bind(economicCalendarController.getImpactAnalysis),
+);
 
 export default router;

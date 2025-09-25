@@ -23,6 +23,7 @@ import economicRoutes from "./economicCalendarRoutes";
 import strategyRoutes from "./strategyRoutes";
 
 import referralRoutes from "./referralRoutes";
+import cacheRoutes from "./cacheRoutes";
 
 export function setupRoutes(): Router {
   const router = Router();
@@ -73,6 +74,9 @@ export function setupRoutes(): Router {
 
   // economic Builder routes
   router.use("/economic", economicRoutes);
+
+  // Cache management routes
+  router.use("/cache", cacheRoutes);
 
   return router;
 }

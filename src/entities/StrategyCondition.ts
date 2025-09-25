@@ -18,7 +18,9 @@ export class StrategyCondition {
   @IsUUID()
   ruleId!: string;
 
-  @ManyToOne(() => StrategyRule, (rule) => rule.conditions, { onDelete: "CASCADE" })
+  @ManyToOne(() => StrategyRule, (rule) => rule.conditions, {
+    onDelete: "CASCADE",
+  })
   rule!: StrategyRule;
 
   @Column({ type: "varchar", length: 50 })
@@ -45,4 +47,4 @@ export class StrategyCondition {
 
   @UpdateDateColumn()
   updatedAt!: Date;
-} 
+}

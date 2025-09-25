@@ -86,4 +86,4 @@ export class CreateStrategyDto {
   checkpoints!: CreateStrategyCheckpointDto[];
 }
 
-export class UpdateStrategyDto extends CreateStrategyDto {} 
+export class UpdateStrategyDto extends CreateStrategyDto {}

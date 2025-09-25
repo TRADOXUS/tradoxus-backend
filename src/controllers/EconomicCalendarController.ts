@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { EconomicCalendarService } from "../services/EconomicCalendarService";
 import { AppError } from "../middleware/errorHandler";
-import { 
-  CreateAlertDto, 
-  CalendarQueryDto, 
-  UpcomingEventsDto 
+import {
+  CreateAlertDto,
+  CalendarQueryDto,
+  UpcomingEventsDto,
 } from "../dto/EconomicCalendarDto";
 import { BaseController } from "./BaseController";
 import { EconomicEvent } from "../entities/EconomicEvent";
@@ -53,8 +53,9 @@ export class EconomicCalendarController extends BaseController<EconomicEvent> {
         return;
       }
 
-      const events = await this.economicCalendarService.getFilteredEvents(queryDto);
-      
+      const events =
+        await this.economicCalendarService.getFilteredEvents(queryDto);
+
       res.status(200).json({
         status: "success",
         data: {
@@ -85,7 +86,7 @@ export class EconomicCalendarController extends BaseController<EconomicEvent> {
       }
 
       const events = await this.economicCalendarService.getUpcomingEvents(
-        upcomingDto.hours || 24
+        upcomingDto.hours || 24,
       );
 
       res.status(200).json({
@@ -113,7 +114,7 @@ export class EconomicCalendarController extends BaseController<EconomicEvent> {
         status: "success",
         data: {
           events,
-          date: new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split("T")[0],
           count: events.length,
         },
       });
@@ -139,7 +140,8 @@ export class EconomicCalendarController extends BaseController<EconomicEvent> {
         return;
       }
 
-      const alert = await this.economicCalendarService.createAlert(createAlertDto);
+      const alert =
+        await this.economicCalendarService.createAlert(createAlertDto);
 
       res.status(201).json({
         status: "success",
@@ -181,7 +183,7 @@ export class EconomicCalendarController extends BaseController<EconomicEvent> {
 
       const alerts = await this.economicCalendarService.getUserAlerts(
         userId as string,
-        isActive !== undefined ? isActive === 'true' : undefined
+        isActive !== undefined ? isActive === "true" : undefined,
       );
 
       res.status(200).json({
@@ -247,7 +249,8 @@ export class EconomicCalendarController extends BaseController<EconomicEvent> {
         return;
       }
 
-      const analysis = await this.economicCalendarService.getImpactAnalysis(eventId);
+      const analysis =
+        await this.economicCalendarService.getImpactAnalysis(eventId);
 
       if (!analysis || analysis.length === 0) {
         res.status(404).json({

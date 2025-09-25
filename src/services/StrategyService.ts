@@ -2,7 +2,10 @@ import { AppDataSource } from "../config/database";
 import { Strategy } from "../entities/Strategy";
 import { StrategyRule, RuleType } from "../entities/StrategyRule";
 import { StrategyCondition } from "../entities/StrategyCondition";
-import { StrategyCheckpoint, CheckpointCategory } from "../entities/StrategyCheckpoint";
+import {
+  StrategyCheckpoint,
+  CheckpointCategory,
+} from "../entities/StrategyCheckpoint";
 import { BaseService } from "./BaseService";
 import { CreateStrategyDto, UpdateStrategyDto } from "../dto/StrategyDto";
 import { AppError } from "../utils/AppError";
@@ -12,7 +15,10 @@ export class StrategyService extends BaseService<Strategy> {
     super(Strategy);
   }
 
-  async createStrategy(data: CreateStrategyDto, userId: string): Promise<Strategy> {
+  async createStrategy(
+    data: CreateStrategyDto,
+    userId: string,
+  ): Promise<Strategy> {
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -77,7 +83,11 @@ export class StrategyService extends BaseService<Strategy> {
     });
   }
 
-  async updateStrategy(id: string, data: UpdateStrategyDto, userId: string): Promise<Strategy | null> {
+  async updateStrategy(
+    id: string,
+    data: UpdateStrategyDto,
+    userId: string,
+  ): Promise<Strategy | null> {
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -150,4 +160,4 @@ export class StrategyService extends BaseService<Strategy> {
       { name: "Volume", params: [] },
     ];
   }
-} 
+}

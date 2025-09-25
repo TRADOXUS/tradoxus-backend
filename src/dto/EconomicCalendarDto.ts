@@ -1,14 +1,14 @@
-import { 
-  IsOptional, 
-  IsString, 
-  IsArray, 
-  IsDateString, 
-  IsUUID, 
-  IsInt, 
+import {
+  IsOptional,
+  IsString,
+  IsArray,
+  IsDateString,
+  IsUUID,
+  IsInt,
   IsBoolean,
   Min,
   Max,
-  IsIn
+  IsIn,
 } from "class-validator";
 import { Transform, Type } from "class-transformer";
 
@@ -24,8 +24,8 @@ export class CalendarQueryDto {
   @IsOptional()
   @IsArray()
   @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.split(',').map(country => country.trim());
+    if (typeof value === "string") {
+      return value.split(",").map((country) => country.trim());
     }
     return value;
   })
@@ -34,19 +34,19 @@ export class CalendarQueryDto {
   @IsOptional()
   @IsArray()
   @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.split(',').map(importance => importance.trim());
+    if (typeof value === "string") {
+      return value.split(",").map((importance) => importance.trim());
     }
     return value;
   })
-  @IsIn(['Low', 'Medium', 'High', 'Critical'], { each: true })
+  @IsIn(["Low", "Medium", "High", "Critical"], { each: true })
   importance?: string[];
 
   @IsOptional()
   @IsArray()
   @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.split(',').map(currency => currency.trim());
+    if (typeof value === "string") {
+      return value.split(",").map((currency) => currency.trim());
     }
     return value;
   })
@@ -70,7 +70,7 @@ export class UpcomingEventsDto {
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(168) 
+  @Max(168)
   @Type(() => Number)
   hours?: number = 24;
 }
@@ -84,8 +84,8 @@ export class CreateAlertDto {
   userId: string;
 
   @IsInt()
-  @Min(5) 
-  @Max(10080) 
+  @Min(5)
+  @Max(10080)
   alertTimeBefore: number;
 
   @IsOptional()
@@ -101,7 +101,7 @@ export class ImpactAnalysisDto {
   assetClass: string;
 
   @IsString()
-  @IsIn(['Bullish', 'Bearish', 'Neutral', 'Mixed'])
+  @IsIn(["Bullish", "Bearish", "Neutral", "Mixed"])
   expectedImpactDirection: string;
 
   @IsInt()
@@ -133,8 +133,8 @@ export class AlertQueryDto {
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value === 'true';
+    if (typeof value === "string") {
+      return value === "true";
     }
     return value;
   })
